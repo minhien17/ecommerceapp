@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "384068393177",
+    "project_id": "hien-ecommerce-project",
+    "storage_bucket": "hien-ecommerce-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:384068393177:android:871f73d7b1fc24225b06c8",
+        "android_client_info": {
+          "package_name": "com.example.ecommerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD321IMHyst4wDrfsK-qUljHu3iY_f9d5c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
