@@ -203,11 +203,11 @@ class ProductDatabaseHelper {
     final querySnapshot = await productsCollectionReference
         .where(Product.OWNER_KEY, isEqualTo: uid)
         .get();
-    List usersProducts = [];
+    List<String> usersProducts = [];
     querySnapshot.docs.forEach((doc) {
       usersProducts.add(doc.id);
     });
-    return [];
+    return usersProducts;
   }
 
   Future<List<String>> get allProductsList async {

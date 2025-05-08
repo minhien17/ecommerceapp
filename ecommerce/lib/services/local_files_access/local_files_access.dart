@@ -50,13 +50,14 @@ Future<String> choseImageFromLocalFiles(
     throw LocalImagePickingInvalidImageException();
   } else {
     final fileLength = await File(imagePicked.path).length();
-    if (fileLength > (maxSizeInKB * 1024) ||
-        fileLength < (minSizeInKB * 1024)) {
-      throw LocalImagePickingFileSizeOutOfBoundsException(
-          message: "Image size should not exceed 1MB");
-    } else {
-      return imagePicked.path;
-    }
+    // if (fileLength > (maxSizeInKB * 1024) ||
+    //     fileLength < (minSizeInKB * 1024)) {
+    //   throw LocalImagePickingFileSizeOutOfBoundsException(
+    //       message: "Image size should not exceed 1MB");
+    // } else {
+    //   return imagePicked.path;
+    // }
+    return imagePicked.path;
   }
   // return ''; // add fix
 }

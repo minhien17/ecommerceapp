@@ -1,4 +1,5 @@
 import 'package:ecommerce/constants.dart';
+import 'package:ecommerce/models/product_model.dart';
 import 'package:ecommerce/pages/edit_product/edit_product_page.dart';
 import 'package:ecommerce/services/authentication/authentification_service.dart';
 import 'package:ecommerce/services/database/user_database_helper.dart';
@@ -7,6 +8,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
+
+import '../../about_developer/about_developer_screen.dart';
+import '../../change_display_name/change_display_name_screen.dart';
+import '../../change_display_picture/change_display_picture_screen.dart';
+import '../../change_email/change_email_screen.dart';
+import '../../change_password/change_password_screen.dart';
+import '../../change_phone/change_phone_screen.dart';
+import '../../manage_addresses/manage_addresses_screen.dart';
+import '../../my_orders/my_orders_screen.dart';
+import '../../my_products/my_products_screen.dart';
 
 class HomeScreenDrawer extends StatelessWidget {
   const HomeScreenDrawer({
@@ -65,12 +76,12 @@ class HomeScreenDrawer extends StatelessWidget {
                 }
                 return;
               }
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => ManageAddressesScreen(),
-              //   ),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ManageAddressesScreen(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -101,12 +112,12 @@ class HomeScreenDrawer extends StatelessWidget {
                 }
                 return;
               }
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => MyOrdersScreen(),
-              //   ),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MyOrdersScreen(),
+                ),
+              );
             },
           ),
           buildSellerExpansionTile(context),
@@ -117,12 +128,12 @@ class HomeScreenDrawer extends StatelessWidget {
               style: TextStyle(fontSize: 16, color: Colors.black),
             ),
             onTap: () async {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (context) => AboutDeveloperScreen(),
-              //   ),
-              // );
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AboutDeveloperScreen(),
+                ),
+              );
             },
           ),
           ListTile(
@@ -203,11 +214,11 @@ class HomeScreenDrawer extends StatelessWidget {
             ),
           ),
           onTap: () {
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => ChangeDisplayPictureScreen(),
-            //     ));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangeDisplayPictureScreen(),
+                ));
           },
         ),
         ListTile(
@@ -219,11 +230,11 @@ class HomeScreenDrawer extends StatelessWidget {
             ),
           ),
           onTap: () {
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => ChangeDisplayNameScreen(),
-            //     ));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangeDisplayNameScreen(),
+                ));
           },
         ),
         ListTile(
@@ -235,29 +246,29 @@ class HomeScreenDrawer extends StatelessWidget {
             ),
           ),
           onTap: () {
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => ChangePhoneScreen(),
-            //     ));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangePhoneScreen(),
+                ));
           },
         ),
-        ListTile(
-          title: Text(
-            "Change Email",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 15,
-            ),
-          ),
-          onTap: () {
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => ChangeEmailScreen(),
-            //     ));
-          },
-        ),
+        // ListTile(
+        //   title: Text(
+        //     "Change Email",
+        //     style: TextStyle(
+        //       color: Colors.black,
+        //       fontSize: 15,
+        //     ),
+        //   ),
+        //   onTap: () {
+        //     Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //           builder: (context) => ChangeEmailScreen(),
+        //         ));
+        //   },
+        // ),
         ListTile(
           title: Text(
             "Change Password",
@@ -267,11 +278,11 @@ class HomeScreenDrawer extends StatelessWidget {
             ),
           ),
           onTap: () {
-            // Navigator.push(
-            //     context,
-            //     MaterialPageRoute(
-            //       builder: (context) => ChangePasswordScreen(),
-            //     ));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangePasswordScreen(),
+                ));
           },
         ),
       ],
@@ -316,8 +327,12 @@ class HomeScreenDrawer extends StatelessWidget {
               }
               return;
             }
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => EditProductScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => EditProductScreen(
+                          productToEdit: Product(''),
+                        )));
           },
         ),
         ListTile(
@@ -350,12 +365,12 @@ class HomeScreenDrawer extends StatelessWidget {
               }
               return;
             }
-            // Navigator.push(
-            //   context,
-            //   MaterialPageRoute(
-            //     builder: (context) => MyProductsScreen(),
-            //   ),
-            // );
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MyProductsScreen(),
+              ),
+            );
           },
         ),
       ],

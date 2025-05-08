@@ -6,9 +6,9 @@ import 'package:provider/provider.dart';
 import 'provider_models/product_detail_model.dart';
 
 class EditProductScreen extends StatelessWidget {
-  Product productToEdit = Product('');
+  final Product productToEdit;
 
-  EditProductScreen({Key? key, Product? productToEdit}) : super(key: key);
+  EditProductScreen({Key? key, required this.productToEdit}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<ProductDetails>(

@@ -13,6 +13,11 @@ import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
+import '../../cart/cart_screen.dart';
+import '../../category_products/category_products_screen.dart';
+import '../../product_details/product_details_screen.dart';
+import '../../search_result/search_result_screen.dart';
+
 const String ICON_KEY = "icon";
 const String TITLE_KEY = "title";
 const String PRODUCT_TYPE_KEY = "product_type";
@@ -99,16 +104,16 @@ class _BodyState extends State<Body> {
                       searchedProductsId = await ProductDatabaseHelper()
                           .searchInProducts(query.toLowerCase());
                       if (searchedProductsId != null) {
-                        // await Navigator.push(
-                        //   context,
-                        //   MaterialPageRoute(
-                        //     builder: (context) => SearchResultScreen(
-                        //       searchQuery: query,
-                        //       searchResultProductsId: searchedProductsId,
-                        //       searchIn: "All Products",
-                        //     ),
-                        //   ),
-                        // );
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SearchResultScreen(
+                              searchQuery: query,
+                              searchResultProductsId: searchedProductsId,
+                              searchIn: "All Products",
+                            ),
+                          ),
+                        );
                         await refreshPage();
                       } else {
                         throw "Couldn't perform search due to some unknown reason";
@@ -146,12 +151,12 @@ class _BodyState extends State<Body> {
                       }
                       return;
                     }
-                    // await Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => CartScreen(),
-                    //   ),
-                    // );
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CartScreen(),
+                      ),
+                    );
                     await refreshPage();
                   },
                 ),
@@ -171,16 +176,16 @@ class _BodyState extends State<Body> {
                               icon: productCategories[index][ICON_KEY],
                               title: productCategories[index][TITLE_KEY],
                               onPress: () {
-                                // Navigator.push(
-                                //   context,
-                                //   MaterialPageRoute(
-                                //     builder: (context) =>
-                                //         CategoryProductsScreen(
-                                //       productType: productCategories[index]
-                                //           [PRODUCT_TYPE_KEY],
-                                //     ),
-                                //   ),
-                                // );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        CategoryProductsScreen(
+                                      productType: productCategories[index]
+                                          [PRODUCT_TYPE_KEY],
+                                    ),
+                                  ),
+                                );
                               },
                             );
                           },
@@ -225,13 +230,13 @@ class _BodyState extends State<Body> {
   }
 
   void onProductCardTapped(String productId) {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => ProductDetailsScreen(productId: productId),
-    //   ),
-    // ).then((_) async {
-    //   await refreshPage();
-    // });
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(productId: productId),
+      ),
+    ).then((_) async {
+      await refreshPage();
+    });
   }
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FirestoreFilesAccess {
   FirestoreFilesAccess._privateConstructor();
@@ -20,10 +21,27 @@ class FirestoreFilesAccess {
   }
 
   Future<String> uploadFileToPath(File file, String path) async {
-    final Reference firestorageRef = FirebaseStorage.instance.ref();
-    final snapshot = await firestorageRef.child(path).putFile(file);
-    final downloadUrl = await snapshot.ref.getDownloadURL();
-    return downloadUrl;
+    final supabase = Supabase.instance.client;
+    const bucketName = 'ecommerce';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final newPath = 'user/display_picture/$timestamp.jpg';
+
+    try {
+      final response = await supabase.storage.from(bucketName).upload(
+            path, // thay đổi từ path
+            file,
+          );
+
+      if (response.isNotEmpty) {
+        final publicUrl = supabase.storage.from(bucketName).getPublicUrl(path);
+        return publicUrl;
+      } else {
+        throw Exception('Upload failed: empty response');
+      }
+    } catch (e) {
+      print('Upload error: $e');
+      rethrow;
+    }
   }
 
   Future<bool> deleteFileFromPath(String path) async {

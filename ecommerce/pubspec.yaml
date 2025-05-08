@@ -43,12 +43,16 @@ dependencies:
   cloud_firestore: ^4.4.5
   logger: ^2.5.0
   future_progress_dialog: ^0.2.1
-  provider: ^6.1.2
+  provider: ^6.1.5
   # flutter_tags: ^0.4.9+1
   permission_handler: ^11.0.1
   image_picker: ^1.0.4
   firebase_storage: ^11.6.0
   material_tag_editor: ^0.1.2
+  supabase_flutter: ^1.10.25
+  dio: ^5.8.0+1
+  swipedetector: ^1.2.0
+  flutter_rating_bar: ^4.0.1
 
 dev_dependencies:
   flutter_test:

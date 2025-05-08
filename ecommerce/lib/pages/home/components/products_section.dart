@@ -6,6 +6,8 @@ import 'package:ecommerce/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+import '../../../components/product_card.dart';
+
 class ProductsSection extends StatelessWidget {
   final String sectionTitle;
   final DataStream productsStreamController;
@@ -89,12 +91,12 @@ class ProductsSection extends StatelessWidget {
       ),
       itemCount: productsId.length,
       itemBuilder: (context, index) {
-        // return ProductCard(
-        //   productId: productsId[index],
-        //   press: () {
-        //     onProductCardTapped.call(productsId[index]);
-        //   },
-        // );
+        return ProductCard(
+          productId: productsId[index],
+          press: () {
+            onProductCardTapped.call(productsId[index]);
+          },
+        );
       },
     );
   }

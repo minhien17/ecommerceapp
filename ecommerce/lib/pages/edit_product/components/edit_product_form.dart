@@ -47,7 +47,7 @@ class _EditProductFormState extends State<EditProductForm> {
   final TextEditingController sellerFieldController = TextEditingController();
 
   bool newProduct = true;
-  Product product = Product("");
+  Product product = Product('');
 
   @override
   void dispose() {
@@ -65,21 +65,20 @@ class _EditProductFormState extends State<EditProductForm> {
   @override
   void initState() {
     super.initState();
-    // if (widget.product == product) {
-    //   product = Product('');
-    //   newProduct = true;
-    // } else {
-    //   product = widget.product;
-    //   newProduct = false;
-    //   final productDetails =
-    //       Provider.of<ProductDetails>(context, listen: false);
-    //   productDetails.initialSelectedImages = widget.product.images!
-    //       .map((e) => CustomImage(imgType: ImageType.network, path: e))
-    //       .toList();
-    //   productDetails.initialProductType =
-    //       product.productType ?? ProductType.Others;
-    //   productDetails.initSearchTags = product.searchTags ?? [];
-    // }
+    if (widget.product.id == '') {
+      newProduct = true;
+    } else {
+      product = widget.product;
+      newProduct = false;
+      final productDetails =
+          Provider.of<ProductDetails>(context, listen: false);
+      productDetails.initialSelectedImages = widget.product.images!
+          .map((e) => CustomImage(imgType: ImageType.network, path: e))
+          .toList();
+      productDetails.initialProductType =
+          product.productType ?? ProductType.Others;
+      productDetails.initSearchTags = product.searchTags ?? [];
+    }
   }
 
   @override
