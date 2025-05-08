@@ -1,5 +1,5 @@
 class ApiEndpoint {
-  static String domain = "localhost";
+  static String domain = "http://192.168.1.103:8000/api/v1/hello";
 
   // end point user
   static String userInfor = "/users/infor";

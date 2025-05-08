@@ -10,4 +10,5 @@ urlpatterns = [
     path('addresses/', include('apps.addresses.urls')),
     path('payments/', include('apps.payments.urls')),
     path('returns/', include('apps.returns.urls')),
+    path('hello/', include('apps.hello.urls')),
 ]

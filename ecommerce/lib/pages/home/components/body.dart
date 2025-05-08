@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
 import '../../cart/cart_screen.dart';
 import '../../category_products/category_products_screen.dart';
 import '../../product_details/product_details_screen.dart';
@@ -28,6 +30,11 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
+  Future<void> getApi() async {
+    var res = await ApiUtil.getInstance()!.get(url: ApiEndpoint.domain);
+    print(res.data);
+  }
+
   final productCategories = <Map>[
     <String, dynamic>{
       ICON_KEY: "assets/icons/Electronics.svg",
@@ -70,6 +77,7 @@ class _BodyState extends State<Body> {
     super.initState();
     favouriteProductsStream.init();
     allProductsStream.init();
+    getApi();
   }
 
   @override

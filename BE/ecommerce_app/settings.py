@@ -70,12 +70,12 @@ WSGI_APPLICATION = 'ecommerce_app.wsgi.application'
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'ecommerce_db'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('DB_NAME', 'postgres'),
+        'USER': os.getenv('DB_USER', 'postgres.mfklybcfpdcbjadyotwn'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'hienlinh2611'),
+        'HOST': os.getenv('DB_HOST', 'aws-0-ap-southeast-1.pooler.supabase.com'),
+        'PORT': os.getenv('DB_PORT', '6543'),
     }
 }
 
@@ -107,10 +107,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',  # Cấu hình xác thực cơ bản (bỏ JWT)
     ),
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # Cho phép tất cả truy cập mà không cần xác thực
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -139,6 +139,8 @@ INSTALLED_APPS += [
     'apps.payments',
     'apps.returns',
 ]
+
+ALLOWED_HOSTS = ['*']
 
 # Sử dụng custom User model
 AUTH_USER_MODEL = 'users.User'

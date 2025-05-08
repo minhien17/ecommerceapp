@@ -26,7 +26,7 @@ class ApiUtil {
       //     "os-version": DeviceUtils.getOSVersion(),
       //     "device-name": DeviceUtils.getDeviceName()
       // };
-      // dio!.options.persistentConnection = false;
+      dio!.options.persistentConnection = false;
       // dio!.interceptors.add(ApiInterceptors(dio!));
       // dio!.interceptors.add(RetryOnConnectionChangeInterceptor(dio: dio!));
     }
@@ -38,6 +38,7 @@ class ApiUtil {
     String contentType = Headers.jsonContentType,
   }) async {
     try {
+      print(url);
       var response = await dio!.get(url,
           queryParameters: params,
           options: Options(
@@ -45,6 +46,7 @@ class ApiUtil {
             contentType: contentType,
           ),
           cancelToken: cancelToken);
+
       return getBaseResponse(response);
     } catch (error) {
       return BaseResponse.error(error.toString());
