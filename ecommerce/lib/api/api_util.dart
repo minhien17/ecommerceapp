@@ -1,165 +1,142 @@
-import 'package:dio/dio.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:ecommerce/common/widgets/flutter_toast.dart';
+import 'package:flutter/material.dart';
+import '../shared_preference.dart';
+import 'api_interceptors.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:http/http.dart' as http;
 
 class ApiUtil {
   bool IS_SHOW_LOG = false;
-  Dio? dio;
   static ApiUtil? _mInstance;
-  CancelToken cancelToken = CancelToken();
 
   static ApiUtil? getInstance() {
     _mInstance ??= ApiUtil();
     return _mInstance;
   }
 
-  ApiUtil() {
-    if (dio == null) {
-      dio = Dio();
-      dio!.options.connectTimeout = const Duration(seconds: 60);
-      dio!.options.receiveTimeout = const Duration(seconds: 60);
-      // dio!.options.headers = {
-      //     "Accept-language": "en",
-      //     "device-type": DeviceUtils.getPlatform(),
-      //     "app-revision": 123,
-      //     "app-version": DeviceUtils.getVersion(),
-      //     "push-id": "",
-      //     "app-provision": DeviceUtils.getPackageName(),
-      //     "os-version": DeviceUtils.getOSVersion(),
-      //     "device-name": DeviceUtils.getDeviceName()
-      // };
-      dio!.options.persistentConnection = false;
-      // dio!.interceptors.add(ApiInterceptors(dio!));
-      // dio!.interceptors.add(RetryOnConnectionChangeInterceptor(dio: dio!));
-    }
-  }
+  ApiUtil();
 
-  Future<BaseResponse> get({
-    required String url,
-    Map<String, dynamic> params = const {},
-    String contentType = Headers.jsonContentType,
-  }) async {
-    try {
-      print(url);
-      var response = await dio!.get(url,
-          queryParameters: params,
-          options: Options(
-            persistentConnection: false,
-            contentType: contentType,
-          ),
-          cancelToken: cancelToken);
-
-      return getBaseResponse(response);
-    } catch (error) {
-      return BaseResponse.error(error.toString());
-    }
-  }
-
-  Future<BaseResponse> post({
-    required String url,
-    Map<String, dynamic>? body,
-    Map<String, dynamic> params = const {},
-    String contentType = Headers.jsonContentType,
-  }) async {
-    try {
-      var response = await dio!.post(url,
-          queryParameters: params,
-          data: body,
-          options: Options(
-            responseType: ResponseType.json,
-            contentType: contentType,
-            persistentConnection: false,
-          ),
-          cancelToken: cancelToken);
-      return getBaseResponse(response);
-    } catch (error) {
-      return BaseResponse.error(error.toString());
-    }
-  }
-
-  Future<BaseResponse> uploadFile(
+  void get(
       {required String url,
-      required FormData data,
       Map<String, dynamic> params = const {},
-      String contentType = Headers.multipartFormDataContentType}) async {
+      required Function(BaseResponse response) onSuccess,
+      required Function(dynamic error) onError,
+      bool isCancel = false}) async {
+    String token = await SharedPreferenceUtil.getToken();
+    var uri = Uri.parse(url).replace(
+        queryParameters:
+            params.map((key, value) => MapEntry(key, value.toString())));
     try {
-      var response = await dio!.post(url,
-          queryParameters: params,
-          data: data,
-          options: Options(
-            responseType: ResponseType.json,
-            contentType: contentType,
-            persistentConnection: false,
-          ), onSendProgress: (sent, total) {
-        print("Đã gửi: $sent / $total");
-      }, cancelToken: cancelToken);
-      return getBaseResponse(response);
-    } catch (error) {
-      return BaseResponse.error(error.toString());
+      print('--- GET Request ---');
+      print('URL: $uri');
+      var res = await http.get(
+        uri,
+        headers: {
+          "authorization": 'Bearer $token',
+          "content-type": 'application/json; charset=UTF-8'
+        },
+      ).timeout(const Duration(seconds: 10));
+      print('--- GET Response ---');
+      print('Status code: ${res.statusCode}');
+      print('Body: ${res.body}');
+      var data = jsonDecode(res.body);
+      if (res.statusCode >= 400) {
+        // var r = ErrorResponse.from(data: data, statusCode: res.statusCode);
+        // var a = ErrorApi.from(response: r);
+        final message = data['message'] ?? 'Lỗi không xác định';
+        onError(message); // chỉ truyền Strings
+      } else {
+        if (onSuccess != null) onSuccess(getBaseResponse2(res));
+      }
+    } catch (e) {
+      // No specified type, handles all
+      print('Something really unknown: $e');
+      if (onError != null) onError(e);
     }
   }
 
-  void postDetectImage({
+  Future<void> put({
+    required String url,
+    Map<String, dynamic>? body,
+    Map<String, dynamic> params = const {},
+    required Function(BaseResponse response) onSuccess,
+    required Function(dynamic error) onError,
+  }) async {
+    String token = await SharedPreferenceUtil.getToken();
+
+    var uri = Uri.parse(url).replace(
+        queryParameters:
+            params.map((key, value) => MapEntry(key, value.toString())));
+    try {
+      var res = await http.put(
+        uri,
+        body: jsonEncode(body),
+        headers: {
+          "authorization": 'Bearer $token',
+          "content-type": 'application/json; charset=UTF-8'
+        },
+      ).timeout(const Duration(seconds: 10));
+      var data = jsonDecode(res.body);
+      if (res.statusCode >= 400) {
+        var r = ErrorResponse.from(data: data, statusCode: res.statusCode);
+        var a = ErrorApi.from(response: r);
+        onError(a);
+      } else {
+        if (onSuccess != null) onSuccess(getBaseResponse2(res));
+      }
+    } catch (e) {
+      // No specified type, handles all
+      print('Something really unknown: $e');
+      if (onError != null) onError(e);
+    }
+  }
+
+  void post({
     required String url,
     Map<String, dynamic>? body,
     Map<String, dynamic> params = const {},
     bool isDetect = false,
-    String contentType = Headers.jsonContentType,
     required Function(BaseResponse response) onSuccess,
     required Function(dynamic error) onError,
   }) async {
-    dio!.options.headers['Authorization'] = '';
-    dio!
-        .post(url,
-            queryParameters: params,
-            data: body,
-            options: Options(
-              responseType: ResponseType.json,
-              contentType: contentType,
-              persistentConnection: false,
-            ),
-            cancelToken: cancelToken)
-        .then((res) {
-      if (onSuccess != null) onSuccess(getBaseResponse(res));
-    }).catchError((error) {
-      if (onError != null) onError(error);
-    });
-  }
+    String token = await SharedPreferenceUtil.getToken();
+    var uri = Uri.parse(url).replace(
+        queryParameters:
+            params.map((key, value) => MapEntry(key, value.toString())));
+    try {
+      print('---Post request ---');
+      print('URL: $uri');
 
-  void postFileDebt({
-    required String url,
-    required String path,
-    Map<String, dynamic> params = const {},
-    bool isDetect = false,
-    String contentType = Headers.jsonContentType,
-    required Function(BaseResponse response) onSuccess,
-    required Function(dynamic error) onError,
-  }) async {
-    FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(path),
-    });
-    // String token = await SharedPreferenceUtil.getToken();
-    // if (!isDetect) {
-    //   if (token.isNotEmpty) {
-    //     dio!.options.headers['Authorization'] = 'Bearer ${token}';
-    //   }
-    // } else {
-    //   dio!.options.headers['Authorization'] =
-    //       'Bearer AIzaSyDyzsELhb6aZYiMPL5NB3AZj8m7HUVFogo';
-    // }
-    dio!
-        .post(url,
-            queryParameters: params,
-            data: formData,
-            options: Options(
-              responseType: ResponseType.json,
-              contentType: contentType,
-              persistentConnection: false,
-            ),
-            cancelToken: cancelToken)
-        .then((res) {
-      if (onSuccess != null) onSuccess(getBaseResponse(res));
-    }).catchError((error) {
-      if (onError != null) onError(error);
-    });
+      var res = await http.post(
+        uri,
+        body: jsonEncode(body),
+        headers: {
+          "authorization": 'Bearer $token',
+          "content-type": 'application/json; charset=UTF-8'
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      print('--- Response ---');
+      print('Status code: ${res.statusCode}');
+      print('Body: ${res.body}');
+
+      var data = jsonDecode(res.body);
+      if (res.statusCode >= 400) {
+        // var r = ErrorResponse.from(data: data, statusCode: res.statusCode);
+        // var a = ErrorApi.from(response: r);
+        final message = data['message'] ?? 'Lỗi không xác định';
+        onError(message); // chỉ truyền String
+      } else {
+        if (onSuccess != null) onSuccess(getBaseResponse2(res));
+      }
+    } catch (e) {
+      // No specified type, handles all
+      print('Something really unknown: $e');
+      if (onError != null) onError(e);
+    }
   }
 
   void delete(
@@ -167,29 +144,14 @@ class ApiUtil {
       Map<String, dynamic> params = const {},
       required Function(BaseResponse response) onSuccess,
       required Function(dynamic error) onError,
-      bool isCancel = false}) async {
-    // String token = await SharedPreferenceUtil.getToken();
-    // if (token.isNotEmpty) {
-    //   dio!.options.headers['Authorization'] = 'Bearer ${token}';
-    // }
-    // if(isCancel) {
-    //   dio!.options.
-    // }
-    dio!
-        .delete(url, queryParameters: params, cancelToken: cancelToken)
-        .then((res) {
-      if (onSuccess != null) onSuccess(getBaseResponse(res));
-    }).catchError((error) {
-      onError(error);
-    });
-  }
+      bool isCancel = false}) async {}
 
-  BaseResponse getBaseResponse(Response response) {
+  BaseResponse getBaseResponse2(http.Response response) {
     return BaseResponse.success(
-        data: response.data ?? "",
+        data: jsonDecode(response.body) ?? "",
         code: response.statusCode,
-        message: response.statusMessage,
-        status: response.data['status']);
+        message: response.reasonPhrase,
+        status: jsonDecode(response.body)['status']);
   }
 }
 
@@ -207,4 +169,42 @@ class BaseResponse {
 
   bool get isSuccess => code != null && code == 200;
   bool get isStatusSuccess => status == 200;
+}
+
+class ErrorResponse {
+  dynamic data;
+  int? statusCode;
+
+  ErrorResponse({this.data, this.statusCode});
+
+  ErrorResponse.from({this.data, this.statusCode});
+}
+
+class ErrorApi {
+  dynamic response;
+
+  ErrorApi({this.response});
+
+  ErrorApi.from({this.response});
+
+  String get message {
+    if (response.data is Map && response.data['message'] != null) {
+      return response.data['message'];
+    }
+    return "Lỗi không xác định (${response.statusCode})";
+  }
+
+  @override
+  String toString() => response;
+}
+
+ErrorApi getBaseErrorResponse(http.Response response) {
+  final body = jsonDecode(response.body);
+
+  final errorResponse = ErrorResponse(
+    statusCode: response.statusCode,
+    data: body,
+  );
+
+  return ErrorApi(response: errorResponse);
 }

@@ -1,0 +1,5 @@
+lệnh chạy
+python manage.py runserver
+
+chạy cho tất cả các thiết bị kết nối được
+python manage.py runserver 0.0.0.0:8000

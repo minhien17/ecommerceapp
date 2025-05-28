@@ -30,11 +30,6 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  Future<void> getApi() async {
-    var res = await ApiUtil.getInstance()!.get(url: ApiEndpoint.domain);
-    print(res.data);
-  }
-
   final productCategories = <Map>[
     <String, dynamic>{
       ICON_KEY: "assets/icons/Electronics.svg",
@@ -77,7 +72,7 @@ class _BodyState extends State<Body> {
     super.initState();
     favouriteProductsStream.init();
     allProductsStream.init();
-    getApi();
+    // getApi();
   }
 
   @override
@@ -207,7 +202,6 @@ class _BodyState extends State<Body> {
                   height: SizeConfig.screenHeight * 0.5,
                   child: ProductsSection(
                     sectionTitle: "Products You Like",
-                    productsStreamController: favouriteProductsStream,
                     emptyListMessage: "Add Product to Favourites",
                     onProductCardTapped: onProductCardTapped,
                   ),
@@ -217,7 +211,6 @@ class _BodyState extends State<Body> {
                   height: SizeConfig.screenHeight * 0.8,
                   child: ProductsSection(
                     sectionTitle: "Explore All Products",
-                    productsStreamController: allProductsStream,
                     emptyListMessage: "Looks like all Stores are closed",
                     onProductCardTapped: onProductCardTapped,
                   ),

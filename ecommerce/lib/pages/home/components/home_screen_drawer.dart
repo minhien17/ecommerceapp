@@ -1,10 +1,12 @@
 import 'package:ecommerce/constants.dart';
 import 'package:ecommerce/models/product_model.dart';
+import 'package:ecommerce/models/user_model.dart';
 import 'package:ecommerce/pages/edit_product/edit_product_page.dart';
+import 'package:ecommerce/pages/sign_in/sign_in.dart';
 import 'package:ecommerce/services/authentication/authentification_service.dart';
 import 'package:ecommerce/services/database/user_database_helper.dart';
+import 'package:ecommerce/shared_preference.dart';
 import 'package:ecommerce/utils.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
@@ -24,14 +26,30 @@ class HomeScreenDrawer extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
+  Future<UserModel> getUser() async {
+    String username = await SharedPreferenceUtil.getUsername();
+    String email = await SharedPreferenceUtil.getEmail();
+    String image = await SharedPreferenceUtil.getImage();
+    String userid = await SharedPreferenceUtil.getToken();
+
+    return UserModel.full(
+        email: email, userid: userid, username: username, image: image);
+  }
+
+  Future<String> getImage() async {
+    String image = await SharedPreferenceUtil.getImage();
+
+    return image;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: ListView(
         physics: BouncingScrollPhysics(),
         children: [
-          StreamBuilder<User?>(
-              stream: AuthentificationService().userChanges,
+          FutureBuilder<UserModel?>(
+              future: getUser(),
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   final user = snapshot.data;
@@ -145,7 +163,12 @@ class HomeScreenDrawer extends StatelessWidget {
             onTap: () async {
               final confirmation =
                   await showConfirmationDialog(context, "Confirm Sign out ?");
-              if (confirmation) AuthentificationService().signOut();
+              if (confirmation) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => SignInScreen()),
+                  (Route<dynamic> route) => false,
+                );
+              }
             },
           ),
         ],
@@ -153,21 +176,21 @@ class HomeScreenDrawer extends StatelessWidget {
     );
   }
 
-  UserAccountsDrawerHeader buildUserAccountsHeader(User user) {
+  UserAccountsDrawerHeader buildUserAccountsHeader(UserModel user) {
     return UserAccountsDrawerHeader(
       margin: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: kTextColor.withOpacity(0.15),
       ),
       accountEmail: Text(
-        user.email ?? "No Email",
+        user.email,
         style: TextStyle(
           fontSize: 15,
           color: Colors.black,
         ),
       ),
       accountName: Text(
-        user.displayName ?? "No Name",
+        user.username,
         style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w500,
@@ -175,7 +198,7 @@ class HomeScreenDrawer extends StatelessWidget {
         ),
       ),
       currentAccountPicture: FutureBuilder(
-        future: UserDatabaseHelper().displayPictureForCurrentUser,
+        future: getImage(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return CircleAvatar(

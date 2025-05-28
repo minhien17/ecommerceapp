@@ -7,19 +7,29 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 import '../../../components/product_card.dart';
+import '../../../models/product_model.dart';
 
 class ProductsSection extends StatelessWidget {
   final String sectionTitle;
-  final DataStream productsStreamController;
   final String emptyListMessage;
   final Function onProductCardTapped;
-  const ProductsSection({
+
+  // List<Product> listProduct = [];
+
+  ProductsSection({
     Key? key,
     required this.sectionTitle,
-    required this.productsStreamController,
     this.emptyListMessage = "No Products to show here",
     required this.onProductCardTapped,
   }) : super(key: key);
+
+  Future<List<Product>> getListProduct() async {
+    if (sectionTitle == "Products You Like") {
+      return [];
+    } else {
+      return []; // api cho all
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +58,8 @@ class ProductsSection extends StatelessWidget {
   }
 
   Widget buildProductsList() {
-    return StreamBuilder<List<String>>(
-      stream: productsStreamController.stream as Stream<List<String>>,
+    return FutureBuilder<List<Product>>(
+      future: getListProduct(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data!.length == 0) {
@@ -72,14 +82,14 @@ class ProductsSection extends StatelessWidget {
           child: NothingToShowContainer(
             iconPath: "assets/icons/network_error.svg",
             primaryMessage: "Something went wrong",
-            secondaryMessage: "Unable to connect to Database",
+            secondaryMessage: "Unable to connect to Server",
           ),
         );
       },
     );
   }
 
-  Widget buildProductGrid(List<String> productsId) {
+  Widget buildProductGrid(List<Product> products) {
     return GridView.builder(
       shrinkWrap: true,
       physics: BouncingScrollPhysics(),
@@ -89,12 +99,12 @@ class ProductsSection extends StatelessWidget {
         crossAxisSpacing: 4,
         mainAxisSpacing: 4,
       ),
-      itemCount: productsId.length,
+      itemCount: products.length,
       itemBuilder: (context, index) {
         return ProductCard(
-          productId: productsId[index],
+          productId: products[index].id,
           press: () {
-            onProductCardTapped.call(productsId[index]);
+            onProductCardTapped.call(products[index].id);
           },
         );
       },

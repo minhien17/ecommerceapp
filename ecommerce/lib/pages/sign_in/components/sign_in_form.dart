@@ -1,10 +1,18 @@
+import 'dart:async';
+
+import 'package:ecommerce/api/api_end_point.dart';
+import 'package:ecommerce/api/api_util.dart';
+import 'package:ecommerce/common/loading.dart';
 import 'package:ecommerce/components/custom_suffix_icon.dart';
 import 'package:ecommerce/components/default_button.dart';
-import 'package:ecommerce/services/authentication/authentification_service.dart';
+import 'package:ecommerce/models/user_model.dart';
+import 'package:ecommerce/shared_preference.dart';
 import 'package:flutter/material.dart';
 
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../constants.dart';
 import '../../../size_config.dart';
+import '../../home/home_page.dart';
 
 class SignInForm extends StatefulWidget {
   @override
@@ -119,12 +127,45 @@ class _SignInFormState extends State<SignInForm> {
   Future<void> signInButtonCallback() async {
     if (_formkey.currentState!.validate()) {
       _formkey.currentState!.save();
-      final AuthentificationService authService = AuthentificationService();
 
-      try {
-        authService.signIn(emailFieldController.text.trim(),
-            passwordFieldController.text.trim());
-      } catch (e) {}
+      AppLoading.show(context);
+
+      var body = {
+        "email": emailFieldController.text.trim(),
+        "password": passwordFieldController.text.trim()
+      };
+      // Navigator.of(context).pushAndRemoveUntil(
+      //   MaterialPageRoute(builder: (context) => Home()),
+      //   (Route<dynamic> route) => false,
+      // );
+
+      var response = ApiUtil.getInstance()!.post(
+        url: ApiEndpoint.login,
+        body: body,
+        onSuccess: (response) {
+          UserModel user = UserModel.fromJson(response.data);
+          // print(user);
+
+          SharedPreferenceUtil.saveToken(user.userid);
+          SharedPreferenceUtil.saveEmail(user.email);
+          SharedPreferenceUtil.saveUsername(user.username);
+          SharedPreferenceUtil.saveImage(user.image);
+          AppLoading.hide(context);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => Home()),
+            (Route<dynamic> route) => false,
+          );
+        },
+        onError: (error) {
+          AppLoading.hide(context);
+          print(error);
+          if (error is TimeoutException) {
+            toastInfo(msg: "Time out");
+          } else {
+            toastInfo(msg: error.toString());
+          }
+        },
+      );
     }
   }
 }

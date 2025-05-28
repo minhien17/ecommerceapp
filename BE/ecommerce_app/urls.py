@@ -27,7 +27,7 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     
     # API endpoints sẽ thêm sau
-    path('api/v1/', include('apps.api_urls')),
+    path('api/', include('apps.api_urls')),
 ]
 
 # Serve media files in development

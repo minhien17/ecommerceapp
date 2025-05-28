@@ -1,3 +1,0 @@
-lệnh chạy
-python manage.py runserver
-

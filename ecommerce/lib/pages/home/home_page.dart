@@ -1,9 +1,5 @@
-import 'package:ecommerce/api/api_end_point.dart';
-import 'package:ecommerce/api/api_util.dart';
 import 'package:ecommerce/pages/home/components/body.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
 
 import 'components/home_screen_drawer.dart';
 

@@ -130,7 +130,7 @@ CORS_ALLOW_ALL_ORIGINS = True  # Chỉ dùng cho môi trường phát triển
 
 # Thêm các ứng dụng local vào danh sách INSTALLED_APPS
 INSTALLED_APPS += [
-    'apps.users.apps.UsersConfig',
+    'apps.users',
     'apps.products',
     'apps.cart',
     'apps.orders',
@@ -142,5 +142,5 @@ INSTALLED_APPS += [
 
 ALLOWED_HOSTS = ['*']
 
-# Sử dụng custom User model
-AUTH_USER_MODEL = 'users.User'
+# # Sử dụng custom User model
+# AUTH_USER_MODEL = 'users.User'

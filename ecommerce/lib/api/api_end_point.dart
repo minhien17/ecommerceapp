@@ -1,5 +1,16 @@
 class ApiEndpoint {
-  static String domain = "http://192.168.1.103:8000/api/v1/hello";
+  // host wifi
+
+  static String HOST = "192.168.110.109";
+
+  // đổi mạng wifi là phải thay đổi host
+  // ipconfig, Ipv4 address
+
+  static String DOMAIN = "http://$HOST:8000/api";
+
+  // login, signup
+  static String login = "$DOMAIN/users/login";
+  static String signup = "$DOMAIN/signup";
 
   // end point user
   static String userInfor = "/users/infor";

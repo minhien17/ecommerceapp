@@ -19,7 +19,7 @@ class Body extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  "Welcome ",
+                  "Welcome to Ecommerce App",
                   style: headingStyle,
                 ),
                 SizedBox(
