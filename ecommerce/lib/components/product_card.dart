@@ -6,11 +6,11 @@ import '../models/product_model.dart';
 import '../services/database/product_database_helper.dart';
 
 class ProductCard extends StatelessWidget {
-  final String productId;
+  final ProductModel product;
   final GestureTapCallback press;
   const ProductCard({
     Key? key,
-    required this.productId,
+    required this.product,
     required this.press,
   }) : super(key: key);
 
@@ -28,35 +28,13 @@ class ProductCard extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          child: FutureBuilder<Product>(
-            future: ProductDatabaseHelper().getProductWithID(productId),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                final Product product = snapshot.data ?? Product('');
-                return buildProductCardItems(product);
-              } else if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              } else if (snapshot.hasError) {
-                final error = snapshot.error.toString();
-                Logger().e(error);
-              }
-              return Center(
-                child: Icon(
-                  Icons.error,
-                  color: kTextColor,
-                  size: 60,
-                ),
-              );
-            },
-          ),
+          child: buildProductCardItems(product),
         ),
       ),
     );
   }
 
-  Column buildProductCardItems(Product product) {
+  Column buildProductCardItems(ProductModel product) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -65,7 +43,7 @@ class ProductCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Image.network(
-              product.images![0],
+              product.images[0],
               fit: BoxFit.contain,
             ),
           ),

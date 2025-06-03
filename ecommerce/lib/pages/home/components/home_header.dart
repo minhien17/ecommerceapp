@@ -30,9 +30,10 @@ class HomeHeader extends StatelessWidget {
         SizedBox(width: 5),
         IconButtonWithCounter(
           svgSrc: "assets/icons/Cart Icon.svg",
-          numOfItems: 0,
+          numOfItems: 1,
           press: onCartButtonPressed,
         ),
+        // cần gọi list cart ở đây để lấy số sp trong cart
       ],
     );
   }

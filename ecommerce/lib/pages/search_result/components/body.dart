@@ -1,3 +1,4 @@
+import 'package:ecommerce/models/product_model.dart';
 import 'package:flutter/material.dart';
 
 import '../../../components/nothingtoshow.dart';
@@ -8,13 +9,13 @@ import '../../product_details/product_details_screen.dart';
 
 class Body extends StatelessWidget {
   final String searchQuery;
-  final List<String> searchResultProductsId;
+  final List<ProductModel> searchResultProducts;
   final String searchIn;
 
   const Body({
     Key? key,
     required this.searchQuery,
-    required this.searchResultProductsId,
+    required this.searchResultProducts,
     required this.searchIn,
   }) : super(key: key);
 
@@ -86,7 +87,7 @@ class Body extends StatelessWidget {
       ),
       child: Builder(
         builder: (context) {
-          if (searchResultProductsId.length > 0) {
+          if (searchResultProducts.length > 0) {
             return GridView.builder(
               shrinkWrap: true,
               physics: BouncingScrollPhysics(),
@@ -96,16 +97,16 @@ class Body extends StatelessWidget {
                 crossAxisSpacing: 4,
                 mainAxisSpacing: 4,
               ),
-              itemCount: searchResultProductsId.length,
+              itemCount: searchResultProducts.length,
               itemBuilder: (context, index) {
                 return ProductCard(
-                  productId: searchResultProductsId[index],
+                  product: searchResultProducts[index],
                   press: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ProductDetailsScreen(
-                          productId: searchResultProductsId[index],
+                          product: searchResultProducts[index],
                         ),
                       ),
                     );

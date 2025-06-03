@@ -5,8 +5,23 @@ import 'package:flutter/material.dart';
 
 import '../size_config.dart';
 
-class AuthentificationWrapper extends StatelessWidget {
+class AuthentificationWrapper extends StatefulWidget {
   static const String routeName = "/authentification_wrapper";
+
+  @override
+  State<AuthentificationWrapper> createState() =>
+      _AuthentificationWrapperState();
+}
+
+class _AuthentificationWrapperState extends State<AuthentificationWrapper> {
+  late Future<bool> _loginCheckFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loginCheckFuture = _checkLoggedIn();
+  }
+
   Future<bool> _checkLoggedIn() async {
     final token = await SharedPreferenceUtil.getToken();
     return token != "";
@@ -17,7 +32,7 @@ class AuthentificationWrapper extends StatelessWidget {
     SizeConfig()
         .init(context); // Đảm bảo gọi init() trước khi sử dụng SizeConfig
     return FutureBuilder<bool>(
-      future: _checkLoggedIn(),
+      future: _loginCheckFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(

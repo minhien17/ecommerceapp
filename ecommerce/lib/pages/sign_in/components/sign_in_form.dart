@@ -134,12 +134,8 @@ class _SignInFormState extends State<SignInForm> {
         "email": emailFieldController.text.trim(),
         "password": passwordFieldController.text.trim()
       };
-      // Navigator.of(context).pushAndRemoveUntil(
-      //   MaterialPageRoute(builder: (context) => Home()),
-      //   (Route<dynamic> route) => false,
-      // );
 
-      var response = ApiUtil.getInstance()!.post(
+      var res = ApiUtil.getInstance()!.post(
         url: ApiEndpoint.login,
         body: body,
         onSuccess: (response) {
@@ -155,6 +151,7 @@ class _SignInFormState extends State<SignInForm> {
             MaterialPageRoute(builder: (context) => Home()),
             (Route<dynamic> route) => false,
           );
+          // Navigator.of(context).pop();
         },
         onError: (error) {
           AppLoading.hide(context);

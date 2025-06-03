@@ -9,11 +9,11 @@ import '../../../size_config.dart';
 import 'product_review_section.dart';
 
 class Body extends StatelessWidget {
-  final String productId;
+  final ProductModel product;
 
   const Body({
     Key? key,
-    required this.productId,
+    required this.product,
   }) : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -21,39 +21,18 @@ class Body extends StatelessWidget {
       child: SingleChildScrollView(
         physics: BouncingScrollPhysics(),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: getProportionateScreenWidth(screenPadding)),
-          child: FutureBuilder<Product>(
-            future: ProductDatabaseHelper().getProductWithID(productId),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                final product = snapshot.data as Product;
-                return Column(
-                  children: [
-                    ProductImages(product: product),
-                    SizedBox(height: getProportionateScreenHeight(20)),
-                    ProductActionsSection(product: product),
-                    SizedBox(height: getProportionateScreenHeight(20)),
-                    ProductReviewsSection(product: product),
-                    SizedBox(height: getProportionateScreenHeight(100)),
-                  ],
-                );
-              } else if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                final error = snapshot.error.toString();
-                Logger().e(error);
-              }
-              return Center(
-                child: Icon(
-                  Icons.error,
-                  color: kTextColor,
-                  size: 60,
-                ),
-              );
-            },
-          ),
-        ),
+            padding: EdgeInsets.symmetric(
+                horizontal: getProportionateScreenWidth(screenPadding)),
+            child: Column(
+              children: [
+                ProductImages(product: product),
+                SizedBox(height: getProportionateScreenHeight(20)),
+                ProductActionsSection(product: product),
+                SizedBox(height: getProportionateScreenHeight(20)),
+                ProductReviewsSection(product: product),
+                SizedBox(height: getProportionateScreenHeight(100)),
+              ],
+            )),
       ),
     );
   }

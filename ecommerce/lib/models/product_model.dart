@@ -2,12 +2,12 @@ import 'package:ecommerce/models/Model.dart';
 import 'package:enum_to_string/enum_to_string.dart';
 
 enum ProductType {
-  Electronics,
-  Books,
-  Fashion,
-  Groceries,
-  Art,
-  Others,
+  electronic,
+  book,
+  fashion,
+  grocery,
+  art,
+  other,
 }
 
 class Product extends Model {
@@ -121,5 +121,76 @@ class Product extends Model {
     if (searchTags != null) map[SEARCH_TAGS_KEY] = searchTags;
 
     return map;
+  }
+}
+
+class ProductModel {
+  String? _productId;
+  List<String>? _images;
+  String? _title;
+  String? _variant;
+  num? _discountPrice = 0;
+  num? _originalPrice = 0;
+  num? _rating;
+  String? _highlights;
+  String? _description;
+  String? _seller;
+  bool _favourite = false;
+  String? _owner;
+  ProductType? _productType;
+  List<String>? _searchTags;
+
+  ProductModel();
+
+  ProductModel.fromJson(Map<String, dynamic> json) {
+    _productId = json['product_id'];
+    _images = List<String>.from(json['images'] ?? []);
+    _title = json['title'];
+    _variant = json['variant'];
+    _discountPrice = json['discount_price'] ?? 0;
+    _originalPrice = json['original_price'] ?? 0;
+    _rating = json['rating'];
+    _highlights = json['highlights'];
+    _description = json['description'];
+    _seller = json['seller'];
+    _favourite = json['favourite'] ?? false;
+    _owner = json['owner'];
+    _searchTags = List<String>.from(json['search_tags'] ?? []);
+
+    // parse productType as enum
+    if (json['product_type'] != null) {
+      final parsedType =
+          EnumToString.fromString(ProductType.values, json['product_type']);
+      if (parsedType != null) {
+        _productType = parsedType;
+      } else {
+        // Giá trị không hợp lệ → có thể gán giá trị mặc định hoặc log lỗi
+        print("⚠️ Invalid product_type: ${json['product_type']}");
+        _productType = ProductType
+            .other; // hoặc gán một default như ProductType.unknown nếu có
+      }
+    }
+  }
+
+  String get id => _productId ?? "";
+  List<String> get images => _images ?? [];
+  String get title => _title ?? "Untitled";
+  String get variant => _variant ?? "Unknown";
+  num get discountPrice => _discountPrice ?? 0;
+  num get originalPrice => _originalPrice ?? 0;
+  num get rating => _rating ?? 0;
+  String get highlights => _highlights ?? "";
+  String get description => _description ?? "";
+  String get seller => _seller ?? "Unknown seller";
+  bool get favourite => _favourite;
+  String get owner => _owner ?? "Unknown";
+  ProductType get productType => _productType ?? ProductType.other;
+  List<String> get searchTags => _searchTags ?? [];
+
+  int calculatePercentageDiscount() {
+    num originalP = originalPrice;
+    num discountP = discountPrice;
+    int discount = (((originalP - discountP) * 100) / originalP).round();
+    return discount;
   }
 }

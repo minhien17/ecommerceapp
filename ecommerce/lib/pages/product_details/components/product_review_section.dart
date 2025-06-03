@@ -1,11 +1,16 @@
+import 'dart:async';
+
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../constants.dart';
 import '../../../models/product_model.dart';
 import '../../../models/review_model.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../size_config.dart';
 import '../../home/components/top_rounded_container.dart';
 import 'review_box.dart';
@@ -16,7 +21,7 @@ class ProductReviewsSection extends StatelessWidget {
     required this.product,
   }) : super(key: key);
 
-  final Product product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +42,8 @@ class ProductReviewsSection extends StatelessWidget {
                 ),
                 SizedBox(height: getProportionateScreenHeight(20)),
                 Expanded(
-                  child: StreamBuilder<List<Review>>(
-                    stream: ProductDatabaseHelper()
-                        .getAllReviewsStreamForProductId(product.id),
+                  child: FutureBuilder<List<ReviewModel>>(
+                    future: getListReview(product.id),
                     builder: (context, snapshot) {
                       if (snapshot.hasData) {
                         final reviewsList = snapshot.data;
@@ -96,11 +100,34 @@ class ProductReviewsSection extends StatelessWidget {
           ),
           Align(
             alignment: Alignment.topCenter,
-            child: buildProductRatingWidget(product.rating ?? 0),
+            child: buildProductRatingWidget(product.rating),
           ),
         ],
       ),
     );
+  }
+
+  Future<List<ReviewModel>> getListReview(String productId) async {
+    final completer = Completer<List<ReviewModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.review}/$productId",
+      onSuccess: (response) {
+        List<ReviewModel> reviews = (response.data as List)
+            .map((json) => ReviewModel.fromJson(json))
+            .toList();
+        completer.complete(reviews);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+    return completer.future;
   }
 
   Widget buildProductRatingWidget(num rating) {

@@ -19,7 +19,7 @@ class ApiUtil {
 
   ApiUtil();
 
-  void get(
+  Future<void> get(
       {required String url,
       Map<String, dynamic> params = const {},
       required Function(BaseResponse response) onSuccess,
@@ -144,14 +144,17 @@ class ApiUtil {
       Map<String, dynamic> params = const {},
       required Function(BaseResponse response) onSuccess,
       required Function(dynamic error) onError,
-      bool isCancel = false}) async {}
+      bool isCancel = false}) async {
+    // fix
+  }
 
   BaseResponse getBaseResponse2(http.Response response) {
     return BaseResponse.success(
-        data: jsonDecode(response.body) ?? "",
-        code: response.statusCode,
-        message: response.reasonPhrase,
-        status: jsonDecode(response.body)['status']);
+      data: jsonDecode(response.body) ?? "",
+      code: response.statusCode,
+      message: response.reasonPhrase,
+      // status: jsonDecode(response.body)['status']
+    );
   }
 }
 

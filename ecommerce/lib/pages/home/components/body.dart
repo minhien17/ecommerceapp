@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ecommerce/constants.dart';
 import 'package:ecommerce/models/product_model.dart';
 import 'package:ecommerce/pages/home/components/home_header.dart';
@@ -9,12 +11,14 @@ import 'package:ecommerce/services/data_stream/favourite_product_stream.dart';
 import 'package:ecommerce/services/database/product_database_helper.dart';
 import 'package:ecommerce/size_config.dart';
 import 'package:ecommerce/utils.dart';
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
 import '../../../api/api_end_point.dart';
 import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../cart/cart_screen.dart';
 import '../../category_products/category_products_screen.dart';
 import '../../product_details/product_details_screen.dart';
@@ -34,51 +38,44 @@ class _BodyState extends State<Body> {
     <String, dynamic>{
       ICON_KEY: "assets/icons/Electronics.svg",
       TITLE_KEY: "Electronics",
-      PRODUCT_TYPE_KEY: ProductType.Electronics,
+      PRODUCT_TYPE_KEY: ProductType.electronic,
     },
     <String, dynamic>{
       ICON_KEY: "assets/icons/Books.svg",
       TITLE_KEY: "Books",
-      PRODUCT_TYPE_KEY: ProductType.Books,
+      PRODUCT_TYPE_KEY: ProductType.book,
     },
     <String, dynamic>{
       ICON_KEY: "assets/icons/Fashion.svg",
       TITLE_KEY: "Fashion",
-      PRODUCT_TYPE_KEY: ProductType.Fashion,
+      PRODUCT_TYPE_KEY: ProductType.fashion,
     },
     <String, dynamic>{
       ICON_KEY: "assets/icons/Groceries.svg",
       TITLE_KEY: "Groceries",
-      PRODUCT_TYPE_KEY: ProductType.Groceries,
+      PRODUCT_TYPE_KEY: ProductType.grocery,
     },
     <String, dynamic>{
       ICON_KEY: "assets/icons/Art.svg",
       TITLE_KEY: "Art",
-      PRODUCT_TYPE_KEY: ProductType.Art,
+      PRODUCT_TYPE_KEY: ProductType.art,
     },
     <String, dynamic>{
       ICON_KEY: "assets/icons/Others.svg",
       TITLE_KEY: "Others",
-      PRODUCT_TYPE_KEY: ProductType.Others,
+      PRODUCT_TYPE_KEY: ProductType.other,
     },
   ];
 
-  final FavouriteProductsStream favouriteProductsStream =
-      FavouriteProductsStream();
-  final AllProductsStream allProductsStream = AllProductsStream();
+  int _refreshKey = 0;
 
   @override
   void initState() {
     super.initState();
-    favouriteProductsStream.init();
-    allProductsStream.init();
-    // getApi();
   }
 
   @override
   void dispose() {
-    favouriteProductsStream.dispose();
-    allProductsStream.dispose();
     super.dispose();
   }
 
@@ -102,17 +99,17 @@ class _BodyState extends State<Body> {
                   onSearchSubmitted: (value) async {
                     final query = value.toString();
                     if (query.length <= 0) return;
-                    List<String> searchedProductsId;
+                    List<ProductModel> searchedProducts = [];
                     try {
-                      searchedProductsId = await ProductDatabaseHelper()
-                          .searchInProducts(query.toLowerCase());
-                      if (searchedProductsId != null) {
+                      // truy vấn để trả về list
+                      searchedProducts = await getListProductSearch(query);
+                      if (searchedProducts != null) {
                         await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => SearchResultScreen(
                               searchQuery: query,
-                              searchResultProductsId: searchedProductsId,
+                              searchResultProducts: searchedProducts,
                               searchIn: "All Products",
                             ),
                           ),
@@ -132,28 +129,6 @@ class _BodyState extends State<Body> {
                     }
                   },
                   onCartButtonPressed: () async {
-                    bool allowed =
-                        AuthentificationService().currentUserVerified;
-                    if (!allowed) {
-                      final reverify = await showConfirmationDialog(context,
-                          "You haven't verified your email address. This action is only allowed for verified users.",
-                          positiveResponse: "Resend verification email",
-                          negativeResponse: "Go back");
-                      if (reverify) {
-                        final future = AuthentificationService()
-                            .sendVerificationEmailToCurrentUser();
-                        await showDialog(
-                          context: context,
-                          builder: (context) {
-                            return FutureProgressDialog(
-                              future,
-                              message: Text("Resending verification email"),
-                            );
-                          },
-                        );
-                      }
-                      return;
-                    }
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -210,6 +185,7 @@ class _BodyState extends State<Body> {
                 SizedBox(
                   height: SizeConfig.screenHeight * 0.8,
                   child: ProductsSection(
+                    key: ValueKey(_refreshKey), // key thay đổi thì sẽ rebuild
                     sectionTitle: "Explore All Products",
                     emptyListMessage: "Looks like all Stores are closed",
                     onProductCardTapped: onProductCardTapped,
@@ -224,17 +200,45 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Future<void> refreshPage() {
-    favouriteProductsStream.reload();
-    allProductsStream.reload();
-    return Future<void>.value();
+  // Future<void> getAllProduct() {
+  //   return true;
+  // }
+
+  Future<List<ProductModel>> getListProductSearch(String query) async {
+    final completer = Completer<List<ProductModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.search,
+      params: {"query": query},
+      onSuccess: (response) {
+        List<ProductModel> products = (response.data as List)
+            .map((json) => ProductModel.fromJson(json))
+            .toList();
+        completer.complete(products);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+    return completer.future;
   }
 
-  void onProductCardTapped(String productId) {
+  Future<void> refreshPage() async {
+    setState(() {
+      _refreshKey++; // mỗi lần gọi sẽ tạo key mới
+    });
+  }
+
+  void onProductCardTapped(ProductModel product) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductDetailsScreen(productId: productId),
+        builder: (context) => ProductDetailsScreen(product: product),
       ),
     ).then((_) async {
       await refreshPage();

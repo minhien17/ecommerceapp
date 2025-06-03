@@ -153,14 +153,14 @@ class _BodyState extends State<Body> {
       child: ProductShortDetailCard(
         productId: product.id,
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailsScreen(
-                productId: product.id,
-              ),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => ProductDetailsScreen(
+          //       productId: product.id,
+          //     ),
+          //   ),
+          // );
         },
       ),
       confirmDismiss: (direction) async {

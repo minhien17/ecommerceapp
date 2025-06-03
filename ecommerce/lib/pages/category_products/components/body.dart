@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/nothingtoshow.dart';
 import '../../../components/product_card.dart';
 import '../../../components/rounded_icon_button.dart';
@@ -24,25 +29,18 @@ class Body extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _BodyState createState() =>
-      _BodyState(categoryProductsStream: CategoryProductsStream(productType));
+  _BodyState createState() => _BodyState();
 }
 
 class _BodyState extends State<Body> {
-  final CategoryProductsStream categoryProductsStream;
-
-  _BodyState({required this.categoryProductsStream});
-
   @override
   void initState() {
     super.initState();
-    categoryProductsStream.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    categoryProductsStream.dispose();
   }
 
   @override
@@ -69,14 +67,13 @@ class _BodyState extends State<Body> {
                   SizedBox(height: getProportionateScreenHeight(20)),
                   SizedBox(
                     height: SizeConfig.screenHeight * 0.68,
-                    child: StreamBuilder<List<String>>(
-                      stream:
-                          categoryProductsStream.stream as Stream<List<String>>,
+                    child: FutureBuilder<List<ProductModel>>(
+                      future: getListProduct(),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          List<String> productsId =
-                              snapshot.data as List<String>;
-                          if (productsId.length == 0) {
+                          List<ProductModel> products =
+                              snapshot.data as List<ProductModel>;
+                          if (products.length == 0) {
                             return Center(
                               child: NothingToShowContainer(
                                 secondaryMessage:
@@ -85,7 +82,7 @@ class _BodyState extends State<Body> {
                             );
                           }
 
-                          return buildProductsGrid(productsId);
+                          return buildProductsGrid(products);
                         } else if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return Center(
@@ -115,6 +112,58 @@ class _BodyState extends State<Body> {
     );
   }
 
+  Future<List<ProductModel>> getListProductSearch(String query) async {
+    final completer = Completer<List<ProductModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.search,
+      params: {
+        "query": query,
+        "category": EnumToString.convertToString(widget.productType)
+      },
+      onSuccess: (response) {
+        List<ProductModel> products = (response.data as List)
+            .map((json) => ProductModel.fromJson(json))
+            .toList();
+        completer.complete(products);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+    return completer.future;
+  }
+
+  Future<List<ProductModel>> getListProduct() async {
+    final completer = Completer<List<ProductModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.product,
+      params: {"category": EnumToString.convertToString(widget.productType)},
+      onSuccess: (response) {
+        List<ProductModel> products = (response.data as List)
+            .map((json) => ProductModel.fromJson(json))
+            .toList();
+        completer.complete(products);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+          print(error);
+          completer.complete([]);
+        }
+      },
+    );
+    return completer.future;
+  }
+
   Widget buildHeadBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -131,27 +180,23 @@ class _BodyState extends State<Body> {
             onSubmit: (value) async {
               final query = value.toString();
               if (query.length <= 0) return;
-              List<String> searchedProductsId;
+              List<ProductModel> searchedProducts = [];
               try {
-                searchedProductsId = await ProductDatabaseHelper()
-                    .searchInProducts(query.toLowerCase(),
-                        productType: widget.productType);
-                if (searchedProductsId != null) {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchResultScreen(
-                        searchQuery: query,
-                        searchResultProductsId: searchedProductsId,
-                        searchIn:
-                            EnumToString.convertToString(widget.productType),
-                      ),
+                // call api
+                searchedProducts = await getListProductSearch(query);
+
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SearchResultScreen(
+                      searchQuery: query,
+                      searchResultProducts: searchedProducts,
+                      searchIn:
+                          EnumToString.convertToString(widget.productType),
                     ),
-                  );
-                  await refreshPage();
-                } else {
-                  throw "Couldn't perform search due to some unknown reason";
-                }
+                  ),
+                );
+                await refreshPage();
               } catch (e) {
                 final error = e.toString();
                 Logger().e(error);
@@ -169,8 +214,7 @@ class _BodyState extends State<Body> {
   }
 
   Future<void> refreshPage() {
-    categoryProductsStream.reload();
-    return Future<void>.value();
+    return getListProduct();
   }
 
   Widget buildCategoryBanner() {
@@ -207,7 +251,7 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Widget buildProductsGrid(List<String> productsId) {
+  Widget buildProductsGrid(List<ProductModel> products) {
     return Container(
       padding: EdgeInsets.symmetric(
         vertical: 16,
@@ -219,17 +263,17 @@ class _BodyState extends State<Body> {
       ),
       child: GridView.builder(
         physics: BouncingScrollPhysics(),
-        itemCount: productsId.length,
+        itemCount: products.length,
         shrinkWrap: true,
         itemBuilder: (context, index) {
           return ProductCard(
-            productId: productsId[index],
+            product: products[index],
             press: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => ProductDetailsScreen(
-                    productId: productsId[index],
+                    product: products[index],
                   ),
                 ),
               ).then(
@@ -256,17 +300,17 @@ class _BodyState extends State<Body> {
 
   String bannerFromProductType() {
     switch (widget.productType) {
-      case ProductType.Electronics:
+      case ProductType.electronic:
         return "assets/images/electronics_banner.jpg";
-      case ProductType.Books:
+      case ProductType.book:
         return "assets/images/books_banner.jpg";
-      case ProductType.Fashion:
+      case ProductType.fashion:
         return "assets/images/fashions_banner.jpg";
-      case ProductType.Groceries:
+      case ProductType.grocery:
         return "assets/images/groceries_banner.jpg";
-      case ProductType.Art:
+      case ProductType.art:
         return "assets/images/arts_banner.jpg";
-      case ProductType.Others:
+      case ProductType.other:
         return "assets/images/others_banner.jpg";
       default:
         return "assets/images/others_banner.jpg";

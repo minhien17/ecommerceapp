@@ -51,4 +51,10 @@ class SharedPreferenceUtil {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString(SPrefCache.KEY_USERID) ?? '';
   }
+
+  // clear
+  static Future<void> clearToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(SPrefCache.KEY_USERID);
+  }
 }

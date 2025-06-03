@@ -47,7 +47,7 @@ class ProductDetails extends ChangeNotifier {
   }
 
   ProductType get productType {
-    return _productType ?? ProductType.Others;
+    return _productType ?? ProductType.other;
   }
 
   set initialProductType(ProductType type) {

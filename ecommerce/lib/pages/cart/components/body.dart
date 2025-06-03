@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:ecommerce/pages/cart/components/checkout_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
 import '../../../components/nothingtoshow.dart';
 import '../../../components/product_short_detail_card.dart';
@@ -24,18 +29,16 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  final CartItemsStream cartItemsStream = CartItemsStream();
   late PersistentBottomSheetController bottomSheetHandler;
+
   @override
   void initState() {
     super.initState();
-    cartItemsStream.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    cartItemsStream.dispose();
   }
 
   @override
@@ -44,7 +47,7 @@ class _BodyState extends State<Body> {
       child: RefreshIndicator(
         onRefresh: refreshPage,
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
             padding: EdgeInsets.symmetric(
                 horizontal: getProportionateScreenWidth(screenPadding)),
@@ -74,18 +77,17 @@ class _BodyState extends State<Body> {
   }
 
   Future<void> refreshPage() {
-    cartItemsStream.reload();
     return Future<void>.value();
   }
 
   Widget buildCartItemsList() {
-    return StreamBuilder<List<String>>(
-      stream: cartItemsStream.stream as Stream<List<String>>,
+    return FutureBuilder<List<CartItemModel>>(
+      future: getListCart(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          List<String> cartItemsId = snapshot.data as List<String>;
-          if (cartItemsId.length == 0) {
-            return Center(
+          List<CartItemModel> cartItems = snapshot.data as List<CartItemModel>;
+          if (cartItems.length == 0) {
+            return const Center(
               child: NothingToShowContainer(
                 iconPath: "assets/icons/empty_cart.svg",
                 secondaryMessage: "Your cart is empty",
@@ -110,29 +112,29 @@ class _BodyState extends State<Body> {
               SizedBox(height: getProportionateScreenHeight(20)),
               Expanded(
                 child: ListView.builder(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  physics: BouncingScrollPhysics(),
-                  itemCount: cartItemsId.length,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: cartItems.length,
                   itemBuilder: (context, index) {
-                    if (index >= cartItemsId.length) {
+                    if (index >= cartItems.length) {
                       return SizedBox(height: getProportionateScreenHeight(80));
                     }
                     return buildCartItemDismissible(
-                        context, cartItemsId[index], index);
+                        context, cartItems[index], index);
                   },
                 ),
               ),
             ],
           );
         } else if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
+          return const Center(
             child: CircularProgressIndicator(),
           );
         } else if (snapshot.hasError) {
           final error = snapshot.error;
           Logger().w(error.toString());
         }
-        return Center(
+        return const Center(
           child: NothingToShowContainer(
             iconPath: "assets/icons/network_error.svg",
             primaryMessage: "Something went wrong",
@@ -143,16 +145,81 @@ class _BodyState extends State<Body> {
     );
   }
 
+  Future<List<CartItemModel>> getListCart() async {
+    final completer = Completer<List<CartItemModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.userCart,
+      onSuccess: (response) {
+        List<CartItemModel> listCarts = (response.data as List)
+            .map((json) => CartItemModel.fromJson(json))
+            .toList();
+        completer.complete(listCarts);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+    return completer.future;
+  }
+
+  Future<ProductModel> getProductWithID(String productId) async {
+    final completer = Completer<ProductModel>();
+
+    ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.product}/$productId",
+      onSuccess: (response) {
+        ProductModel product = ProductModel.fromJson(response.data);
+        completer.complete(product);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.completeError(error); // note: cẩn thận với lỗi
+      },
+    );
+    return completer.future;
+  }
+
+  Future<bool> deleteProduct(String cartItem) {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.get(
+      // delete
+      url: "${ApiEndpoint.userCart}/$cartItem",
+      onSuccess: (response) {
+        completer.complete(true);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(false); // note: cẩn thận với lỗi
+      },
+    );
+    return completer.future;
+  }
+
   Widget buildCartItemDismissible(
-      BuildContext context, String cartItemId, int index) {
+      BuildContext context, CartItemModel cartItem, int index) {
     return Dismissible(
-      key: Key(cartItemId),
+      key: Key(cartItem.id),
       direction: DismissDirection.startToEnd,
       dismissThresholds: {
         DismissDirection.startToEnd: 0.65,
       },
       background: buildDismissibleBackground(),
-      child: buildCartItem(cartItemId, index),
+      child: buildCartItem(cartItem, index),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           final confirmation = await showConfirmationDialog(
@@ -164,20 +231,13 @@ class _BodyState extends State<Body> {
               bool result = false;
               String snackbarMessage = '';
               try {
-                result = await UserDatabaseHelper()
-                    .removeProductFromCart(cartItemId);
+                result = await deleteProduct(cartItem.id);
                 if (result == true) {
                   snackbarMessage = "Product removed from cart successfully";
                   await refreshPage();
                 } else {
                   throw "Coulnd't remove product from cart due to unknown reason";
                 }
-              } on FirebaseException catch (e) {
-                Logger().w("Firebase Exception: $e");
-                snackbarMessage = "Something went wrong";
-              } catch (e) {
-                Logger().w("Unknown Exception: $e");
-                snackbarMessage = "Something went wrong";
               } finally {
                 Logger().i(snackbarMessage);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -197,20 +257,20 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Widget buildCartItem(String cartItemId, int index) {
+  Widget buildCartItem(CartItemModel cartItem, int index) {
     return Container(
-      padding: EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: 4,
         top: 4,
         right: 4,
       ),
-      margin: EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         border: Border.all(color: kTextColor.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(15),
       ),
-      child: FutureBuilder<Product>(
-        future: ProductDatabaseHelper().getProductWithID(cartItemId),
+      child: FutureBuilder<ProductModel>(
+        future: getProductWithID(cartItem.productId),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             Product product = snapshot.data as Product;
@@ -223,22 +283,22 @@ class _BodyState extends State<Body> {
                   child: ProductShortDetailCard(
                     productId: product.id,
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailsScreen(
-                            productId: product.id,
-                          ),
-                        ),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => ProductDetailsScreen(
+                      //       productId: product.id,
+                      //     ),
+                      //   ),
+                      // );
                     },
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   flex: 1,
                   child: Container(
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: 2,
                       vertical: 12,
                     ),
@@ -250,18 +310,18 @@ class _BodyState extends State<Body> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         InkWell(
-                          child: Icon(
+                          child: const Icon(
                             Icons.arrow_drop_up,
                             color: kTextColor,
                           ),
                           onTap: () async {
-                            await arrowUpCallback(cartItemId);
+                            await arrowUpCallback(cartItem.id);
                           },
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         FutureBuilder<CartItem>(
-                          future: UserDatabaseHelper()
-                              .getCartItemFromId(cartItemId),
+                          // future: UserDatabaseHelper()
+                          //     .getCartItemFromId(cartItemId),
                           builder: (context, snapshot) {
                             int itemCount = 0;
                             if (snapshot.hasData) {
@@ -273,7 +333,7 @@ class _BodyState extends State<Body> {
                             }
                             return Text(
                               "$itemCount",
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: kPrimaryColor,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
@@ -281,14 +341,14 @@ class _BodyState extends State<Body> {
                             );
                           },
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         InkWell(
-                          child: Icon(
+                          child: const Icon(
                             Icons.arrow_drop_down,
                             color: kTextColor,
                           ),
                           onTap: () async {
-                            await arrowDownCallback(cartItemId);
+                            await arrowDownCallback(cartItem.id);
                           },
                         ),
                       ],
@@ -298,7 +358,7 @@ class _BodyState extends State<Body> {
               ],
             );
           } else if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(),
             );
           } else if (snapshot.hasError) {
@@ -310,7 +370,7 @@ class _BodyState extends State<Body> {
               ),
             );
           } else {
-            return Center(
+            return const Center(
               child: Icon(
                 Icons.error,
               ),
@@ -323,7 +383,7 @@ class _BodyState extends State<Body> {
 
   Widget buildDismissibleBackground() {
     return Container(
-      padding: EdgeInsets.only(left: 20),
+      padding: const EdgeInsets.only(left: 20),
       decoration: BoxDecoration(
         color: Colors.red,
         borderRadius: BorderRadius.circular(15),
@@ -332,12 +392,12 @@ class _BodyState extends State<Body> {
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             Icons.delete,
             color: Colors.white,
           ),
-          SizedBox(width: 4),
-          Text(
+          const SizedBox(width: 4),
+          const Text(
             "Delete",
             style: TextStyle(
               color: Colors.white,
@@ -401,14 +461,14 @@ class _BodyState extends State<Body> {
         builder: (context) {
           return FutureProgressDialog(
             orderFuture,
-            message: Text("Placing the Order"),
+            message: const Text("Placing the Order"),
           );
         },
       );
     }).catchError((e) {
       Logger().e(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Something went wrong"),
         ),
       );
@@ -418,7 +478,7 @@ class _BodyState extends State<Body> {
       builder: (context) {
         return FutureProgressDialog(
           orderFuture,
-          message: Text("Placing the Order"),
+          message: const Text("Placing the Order"),
         );
       },
     );
@@ -442,7 +502,7 @@ class _BodyState extends State<Body> {
       }
     }).catchError((e) {
       Logger().e(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text("Something went wrong"),
       ));
     });
@@ -451,7 +511,7 @@ class _BodyState extends State<Body> {
       builder: (context) {
         return FutureProgressDialog(
           future,
-          message: Text("Please wait"),
+          message: const Text("Please wait"),
         );
       },
     );
@@ -468,7 +528,7 @@ class _BodyState extends State<Body> {
       }
     }).catchError((e) {
       Logger().e(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text("Something went wrong"),
       ));
     });
@@ -477,7 +537,7 @@ class _BodyState extends State<Body> {
       builder: (context) {
         return FutureProgressDialog(
           future,
-          message: Text("Please wait"),
+          message: const Text("Please wait"),
         );
       },
     );

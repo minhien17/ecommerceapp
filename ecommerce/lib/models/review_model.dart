@@ -43,3 +43,24 @@ class Review extends Model {
     return map;
   }
 }
+
+class ReviewModel {
+  String? _reviewId;
+  String? _reviewerUid;
+  int? _rating;
+  String? _feedback;
+
+  ReviewModel();
+
+  ReviewModel.fromJson(Map<String, dynamic> json) {
+    _reviewId = json['review_id'];
+    _reviewerUid = json['reviewer_uid'];
+    _rating = json['rating'];
+    _feedback = json['review'];
+  }
+
+  String get id => _reviewId ?? "";
+  String get reviewerUid => _reviewerUid ?? "";
+  int get rating => _rating ?? 0;
+  String get feedback => _feedback ?? "";
+}

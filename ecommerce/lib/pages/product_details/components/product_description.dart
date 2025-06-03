@@ -12,7 +12,7 @@ class ProductDescription extends StatelessWidget {
     required this.product,
   }) : super(key: key);
 
-  final Product product;
+  final ProductModel product;
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -96,12 +96,12 @@ class ProductDescription extends StatelessWidget {
             const SizedBox(height: 16),
             ExpandableText(
               title: "Highlights",
-              content: product.highlights ?? '',
+              content: product.highlights,
             ),
             const SizedBox(height: 16),
             ExpandableText(
               title: "Description",
-              content: product.description ?? '',
+              content: product.description,
             ),
             const SizedBox(height: 16),
             Text.rich(

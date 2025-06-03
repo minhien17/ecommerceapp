@@ -13,7 +13,7 @@ class ProductImages extends StatelessWidget {
     required this.product,
   }) : super(key: key);
 
-  final Product product;
+  final ProductModel product;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +27,14 @@ class ProductImages extends StatelessWidget {
                 onSwipeLeft: () {
                   productImagesSwiper.currentImageIndex++;
                   productImagesSwiper.currentImageIndex %=
-                      product.images!.length;
+                      product.images.length;
                 },
                 onSwipeRight: () {
                   productImagesSwiper.currentImageIndex--;
                   productImagesSwiper.currentImageIndex +=
-                      product.images!.length;
+                      product.images.length;
                   productImagesSwiper.currentImageIndex %=
-                      product.images!.length;
+                      product.images.length;
                 },
                 child: Container(
                   padding: const EdgeInsets.all(16),
@@ -48,7 +48,7 @@ class ProductImages extends StatelessWidget {
                     height: SizeConfig.screenHeight * 0.35,
                     width: SizeConfig.screenWidth * 0.75,
                     child: Image.network(
-                      product.images![productImagesSwiper.currentImageIndex],
+                      product.images[productImagesSwiper.currentImageIndex],
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -59,7 +59,7 @@ class ProductImages extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ...List.generate(
-                    product.images!.length,
+                    product.images.length,
                     (index) =>
                         buildSmallPreview(productImagesSwiper, index: index),
                   ),
@@ -92,7 +92,7 @@ class ProductImages extends StatelessWidget {
                   ? kPrimaryColor
                   : Colors.transparent),
         ),
-        child: Image.network(product.images![index]),
+        child: Image.network(product.images[index]),
       ),
     );
   }

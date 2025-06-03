@@ -1,20 +1,22 @@
+import 'dart:async';
+
 import 'package:ecommerce/components/nothingtoshow.dart';
 import 'package:ecommerce/pages/home/components/section_tile.dart';
-import 'package:ecommerce/services/data_stream/data_stream.dart';
-import 'package:ecommerce/services/data_stream/favourite_product_stream.dart';
 import 'package:ecommerce/size_config.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/product_card.dart';
 import '../../../models/product_model.dart';
+import 'package:ecommerce/common/loading.dart';
 
-class ProductsSection extends StatelessWidget {
+class ProductsSection extends StatefulWidget {
   final String sectionTitle;
   final String emptyListMessage;
   final Function onProductCardTapped;
-
-  // List<Product> listProduct = [];
 
   ProductsSection({
     Key? key,
@@ -23,12 +25,53 @@ class ProductsSection extends StatelessWidget {
     required this.onProductCardTapped,
   }) : super(key: key);
 
-  Future<List<Product>> getListProduct() async {
-    if (sectionTitle == "Products You Like") {
-      return [];
+  @override
+  State<ProductsSection> createState() => _ProductsSectionState();
+}
+
+class _ProductsSectionState extends State<ProductsSection> {
+  Future<List<ProductModel>> getListProduct() async {
+    final completer = Completer<List<ProductModel>>();
+
+    if (widget.sectionTitle == "Products You Like") {
+      ApiUtil.getInstance()!.get(
+        url: ApiEndpoint.productYouLike,
+        onSuccess: (response) {
+          List<ProductModel> products = (response.data as List)
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          completer.complete(products);
+        },
+        onError: (error) {
+          if (error is TimeoutException) {
+            toastInfo(msg: "Time out");
+          } else {
+            toastInfo(msg: error.toString());
+          }
+          completer.complete([]);
+        },
+      );
     } else {
-      return []; // api cho all
+      ApiUtil.getInstance()!.get(
+        url: ApiEndpoint.product,
+        onSuccess: (response) {
+          List<ProductModel> products = (response.data as List)
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          completer.complete(products);
+        },
+        onError: (error) {
+          if (error is TimeoutException) {
+            toastInfo(msg: "Time out");
+          } else {
+            toastInfo(msg: error.toString());
+            print(error);
+          }
+          completer.complete([]);
+        },
+      );
     }
+    return completer.future;
   }
 
   @override
@@ -45,7 +88,7 @@ class ProductsSection extends StatelessWidget {
       child: Column(
         children: [
           SectionTile(
-            title: sectionTitle,
+            title: widget.sectionTitle,
             press: () {},
           ),
           SizedBox(height: getProportionateScreenHeight(15)),
@@ -58,14 +101,14 @@ class ProductsSection extends StatelessWidget {
   }
 
   Widget buildProductsList() {
-    return FutureBuilder<List<Product>>(
+    return FutureBuilder<List<ProductModel>>(
       future: getListProduct(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data!.length == 0) {
             return Center(
               child: NothingToShowContainer(
-                secondaryMessage: emptyListMessage,
+                secondaryMessage: widget.emptyListMessage,
               ),
             );
           }
@@ -89,7 +132,7 @@ class ProductsSection extends StatelessWidget {
     );
   }
 
-  Widget buildProductGrid(List<Product> products) {
+  Widget buildProductGrid(List<ProductModel> products) {
     return GridView.builder(
       shrinkWrap: true,
       physics: BouncingScrollPhysics(),
@@ -102,9 +145,9 @@ class ProductsSection extends StatelessWidget {
       itemCount: products.length,
       itemBuilder: (context, index) {
         return ProductCard(
-          productId: products[index].id,
+          product: products[index],
           press: () {
-            onProductCardTapped.call(products[index].id);
+            widget.onProductCardTapped.call(products[index]);
           },
         );
       },

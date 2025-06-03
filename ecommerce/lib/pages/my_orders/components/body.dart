@@ -191,16 +191,16 @@ class _BodyState extends State<Body> {
                   child: ProductShortDetailCard(
                     productId: product!.id,
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailsScreen(
-                            productId: product.id,
-                          ),
-                        ),
-                      ).then((_) async {
-                        await refreshPage();
-                      });
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => ProductDetailsScreen(
+                      //       productId: product.id,
+                      //     ),
+                      //   ),
+                      // ).then((_) async {
+                      //   await refreshPage();
+                      // });
                     },
                   ),
                 ),

@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:ecommerce/pages/product_details/components/product_description.dart';
+import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../models/product_model.dart';
 import '../../../services/authentication/authentification_service.dart';
 import '../../../services/database/user_database_helper.dart';
@@ -13,7 +19,7 @@ import '../../home/components/top_rounded_container.dart';
 import '../provider_models/ProductActions.dart';
 
 class ProductActionsSection extends StatelessWidget {
-  final Product product;
+  final ProductModel product;
 
   const ProductActionsSection({
     Key? key,
@@ -37,17 +43,10 @@ class ProductActionsSection extends StatelessWidget {
         ),
       ],
     );
-    UserDatabaseHelper().isProductFavourite(product.id).then(
-      (value) {
-        final productActions =
-            Provider.of<ProductActions>(context, listen: false);
-        productActions.productFavStatus = value;
-      },
-    ).catchError(
-      (e) {
-        Logger().w("$e");
-      },
-    );
+
+    // Check if the product is in the user's favourite list
+    checkProductFavouriteStatus(context);
+
     return column;
   }
 
@@ -56,41 +55,16 @@ class ProductActionsSection extends StatelessWidget {
       builder: (context, productDetails, child) {
         return InkWell(
           onTap: () async {
-            bool allowed = AuthentificationService().currentUserVerified;
-            if (!allowed) {
-              final reverify = await showConfirmationDialog(context,
-                  "You haven't verified your email address. This action is only allowed for verified users.",
-                  positiveResponse: "Resend verification email",
-                  negativeResponse: "Go back");
-              if (reverify) {
-                final future = AuthentificationService()
-                    .sendVerificationEmailToCurrentUser();
-                await showDialog(
-                  context: context,
-                  builder: (context) {
-                    return FutureProgressDialog(
-                      future,
-                      message: Text("Resending verification email"),
-                    );
-                  },
-                );
-              }
-              return;
-            }
             bool success = false;
-            final future = UserDatabaseHelper()
-                .switchProductFavouriteStatus(
-                    product.id, !productDetails.productFavStatus)
-                .then(
-              (status) {
-                success = status;
-              },
-            ).catchError(
-              (e) {
-                Logger().e(e.toString());
-                success = false;
-              },
-            );
+
+            final future = postFavoriteProduct().then((status) {
+              success = status;
+            }).catchError((e) {
+              Logger().e(e.toString());
+              success = false;
+            });
+            // success when post ok - switch the status
+
             await showDialog(
               context: context,
               builder: (context) {
@@ -130,5 +104,62 @@ class ProductActionsSection extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// Post the product to the user's favourite list - switch the status
+  /// if successful, return true, otherwise return false
+  Future<bool> postFavoriteProduct() async {
+    final completer = Completer<bool>();
+    bool status = false;
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.productYouLike,
+      onSuccess: (response) {
+        // Xử lý thành công, trả về true
+        status = response.data['status'] ?? false;
+        completer.complete(status);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(false);
+      },
+    );
+    return completer.future;
+  }
+
+  Future<List<ProductModel>> getListProductFavourite() async {
+    final completer = Completer<List<ProductModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.productYouLike,
+      onSuccess: (response) {
+        List<ProductModel> products = (response.data as List)
+            .map((json) => ProductModel.fromJson(json))
+            .toList();
+        completer.complete(products);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+    return completer.future;
+  }
+
+  void checkProductFavouriteStatus(BuildContext context) async {
+    List<ProductModel> products = [];
+    products = await getListProductFavourite();
+
+    // check if the product is in the list of favourite products
+    bool value = products.any((element) => element.id == product.id);
+    final productActions = Provider.of<ProductActions>(context, listen: false);
+    productActions.productFavStatus = value; // ghi trạng thái
   }
 }

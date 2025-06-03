@@ -76,7 +76,7 @@ class _EditProductFormState extends State<EditProductForm> {
           .map((e) => CustomImage(imgType: ImageType.network, path: e))
           .toList();
       productDetails.initialProductType =
-          product.productType ?? ProductType.Others;
+          product.productType ?? ProductType.other;
       productDetails.initSearchTags = product.searchTags ?? [];
     }
   }
@@ -298,7 +298,7 @@ class _EditProductFormState extends State<EditProductForm> {
               fontSize: 16,
             ),
             onChanged: (value) {
-              productDetails.productType = value ?? ProductType.Others;
+              productDetails.productType = value ?? ProductType.other;
             },
             elevation: 0,
             underline: SizedBox(width: 0, height: 0),

@@ -1,5 +1,7 @@
 from django.urls import path
 
+from apps.products.views import getProduct
+
 urlpatterns = [
-    # Các endpoints sẽ thêm sau
+    path('', getProduct, name='products'),
 ]

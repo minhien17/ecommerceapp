@@ -11,7 +11,7 @@ class IconButtonWithCounter extends StatelessWidget {
   const IconButtonWithCounter({
     Key? key,
     required this.svgSrc,
-    this.numOfItems = 0,
+    this.numOfItems = 1,
     required this.press,
   }) : super(key: key);
 

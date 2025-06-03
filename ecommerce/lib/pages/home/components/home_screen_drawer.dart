@@ -7,6 +7,7 @@ import 'package:ecommerce/services/authentication/authentification_service.dart'
 import 'package:ecommerce/services/database/user_database_helper.dart';
 import 'package:ecommerce/shared_preference.dart';
 import 'package:ecommerce/utils.dart';
+import 'package:ecommerce/wrappers/authentification_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
@@ -164,6 +165,7 @@ class HomeScreenDrawer extends StatelessWidget {
               final confirmation =
                   await showConfirmationDialog(context, "Confirm Sign out ?");
               if (confirmation) {
+                await SharedPreferenceUtil.clearToken();
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => SignInScreen()),
                   (Route<dynamic> route) => false,

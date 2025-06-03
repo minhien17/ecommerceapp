@@ -3,7 +3,7 @@ import '../../../constants.dart';
 import '../../../models/review_model.dart';
 
 class ReviewBox extends StatelessWidget {
-  final Review review;
+  final ReviewModel review;
   const ReviewBox({
     Key? key,
     required this.review,
