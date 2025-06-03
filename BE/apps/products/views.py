@@ -8,7 +8,9 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
         "data": data,
         "status": status,
         "errMessage": errMessage
-    }, status=status)
+    }, status=status
+    ,content_type='application/json; charset=utf-8' #truyền được ký tự tiếng việt
+    )
 
 #get product
 @api_view(['GET'])

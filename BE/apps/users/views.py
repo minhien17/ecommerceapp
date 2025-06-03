@@ -18,21 +18,15 @@ def login(request):
         username = request.data.get('email')
         password = request.data.get('password')
 
-        # if not username or not password:
-        #     return Response(
-        #         {'status': '400', 'message': 'Vui lòng nhập username và password'},
-        #         status=status.HTTP_400_BAD_REQUEST
-        #     )
-
         if username == "hienlinh2624@gmail.com" and password == "123456":
-            return Response(
+            return api_response( data=
                 {
                 'userid': 'sfDVgu50oyQt4iHk9pK0RZ0ikwh2',
                 'username': 'Minh Hiển',
                 'email': 'hienlinh2624@gmail.com',
                 'image': 'https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2'
                 },
-            content_type='application/json; charset=utf-8' #truyền được ký tự tiếng việt
+                content_type='application/json; charset=utf-8' #truyền được ký tự tiếng việt
             )
 
         return Response(
