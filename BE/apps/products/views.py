@@ -22,8 +22,7 @@ def product_detail(request, productid):
         "discount_price": 9.0,
         "highlights": "Thoáng mát, trẻ trung",
         "images": [
-            "https://example.com/image1.jpg",
-            "https://example.com/image2.jpg"
+            "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
         ],
         "original_price": 12.0,
         "owner": "user123",
@@ -47,8 +46,8 @@ def product_list(request):
             "discount_price": 9.0,
             "highlights": "Thoáng mát, trẻ trung",
             "images": [
-                "https://example.com/image1.jpg",
-                "https://example.com/image2.jpg"
+                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2",
+                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
             ],
             "original_price": 12.0,
             "owner": "user123",
@@ -65,7 +64,7 @@ def product_list(request):
             "discount_price": 15.0,
             "highlights": "Co giãn, thời trang",
             "images": [
-                "https://example.com/image3.jpg"
+                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
             ],
             "original_price": 20.0,
             "owner": "user456",

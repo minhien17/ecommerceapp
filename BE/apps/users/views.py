@@ -9,7 +9,7 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
         "data": data,
         "status": status,
         "errMessage": errMessage
-    }, status=status)
+    }, status=status , content_type='application/json; charset=utf-8')
 
 # API login
 @api_view(['POST'])
@@ -24,9 +24,8 @@ def login(request):
                 'userid': 'sfDVgu50oyQt4iHk9pK0RZ0ikwh2',
                 'username': 'Minh Hiển',
                 'email': 'hienlinh2624@gmail.com',
-                'image': 'https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2'
+                'image': None # nếu có ảnh thì truyền, ko thì truyền None
                 },
-                content_type='application/json; charset=utf-8' #truyền được ký tự tiếng việt
             )
 
         return Response(
@@ -68,12 +67,7 @@ def cart(request):
         cart = [
             {
                 "product_id": "1",
-                "quantity": 2,
-                "product": {
-                    "images": "https://example.com/image1.jpg",
-                    "discount_price": 9.0,
-                    "title": "Áo thun nam"
-                }
+                "item_count": 2,
             }
         ]
         return api_response(data=cart, message="Get cart success", code=200, status=200)
@@ -89,15 +83,19 @@ def remove_from_cart(request, productid):
     return api_response(data=cart, message="Remove from cart success", code=200, status=200)
 
 #cap nhat thong tin ca nhan
-@api_view(['PATCH'])
+@api_view(['POST'])
 def update_user(request):
-    # TODO: Lấy user từ token, cập nhật thông tin
-    if request.data.get("password") == "wrong":
-        return api_response(data={"success": False}, message="Invalid password", code=400, status=400, errMessage="INVALID_PASSWORD")
+    
     user = {
         "id": "user_id",
         "picture": request.data.get("picture"),
         "name": request.data.get("name"),
-        "number": request.data.get("number")
+        "number": request.data.get("number"),
+        "password": request.data.get("password")
     }
-    return api_response(data={"success": True, "user": user}, message="Update user success", code=200, status=200)
+    return api_response(
+        data={"success": True, "user": user},
+        message="Update user success",
+        code=200,
+        status=200
+    )
