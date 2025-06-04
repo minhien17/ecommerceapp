@@ -139,7 +139,7 @@ class _SignInFormState extends State<SignInForm> {
         url: ApiEndpoint.login,
         body: body,
         onSuccess: (response) {
-          UserModel user = UserModel.fromJson(response.data);
+          UserModel user = UserModel.fromJson(response.data['data']);
           // print(user);
 
           SharedPreferenceUtil.saveToken(user.userid);

@@ -30,6 +30,14 @@ class ProductsSection extends StatefulWidget {
 }
 
 class _ProductsSectionState extends State<ProductsSection> {
+  late Future<List<ProductModel>> _productsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _productsFuture = getListProduct();
+  }
+
   Future<List<ProductModel>> getListProduct() async {
     final completer = Completer<List<ProductModel>>();
 
@@ -102,7 +110,7 @@ class _ProductsSectionState extends State<ProductsSection> {
 
   Widget buildProductsList() {
     return FutureBuilder<List<ProductModel>>(
-      future: getListProduct(),
+      future: _productsFuture,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           if (snapshot.data!.length == 0) {

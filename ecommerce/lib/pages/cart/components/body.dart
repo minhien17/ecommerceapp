@@ -14,10 +14,8 @@ import '../../../components/nothingtoshow.dart';
 import '../../../components/product_short_detail_card.dart';
 import '../../../constants.dart';
 import '../../../models/cart_item_model.dart';
-import '../../../models/cart_items_stream.dart';
 import '../../../models/order_product_model.dart';
 import '../../../models/product_model.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 import '../../../utils.dart';
@@ -29,8 +27,8 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  late PersistentBottomSheetController bottomSheetHandler;
-
+  PersistentBottomSheetController? bottomSheetHandler;
+  List<CartItemModel> listCart = [];
   @override
   void initState() {
     super.initState();
@@ -86,7 +84,7 @@ class _BodyState extends State<Body> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           List<CartItemModel> cartItems = snapshot.data as List<CartItemModel>;
-          if (cartItems.length == 0) {
+          if (cartItems.isEmpty) {
             return const Center(
               child: NothingToShowContainer(
                 iconPath: "assets/icons/empty_cart.svg",
@@ -104,6 +102,7 @@ class _BodyState extends State<Body> {
                     (context) {
                       return CheckoutCard(
                         onCheckoutPressed: checkoutButtonCallback,
+                        cartItems: cartItems,
                       );
                     },
                   );
@@ -151,7 +150,7 @@ class _BodyState extends State<Body> {
     ApiUtil.getInstance()!.get(
       url: ApiEndpoint.userCart,
       onSuccess: (response) {
-        List<CartItemModel> listCarts = (response.data as List)
+        List<CartItemModel> listCarts = (response.data['data'] as List)
             .map((json) => CartItemModel.fromJson(json))
             .toList();
         completer.complete(listCarts);
@@ -174,7 +173,7 @@ class _BodyState extends State<Body> {
     ApiUtil.getInstance()!.get(
       url: "${ApiEndpoint.product}/$productId",
       onSuccess: (response) {
-        ProductModel product = ProductModel.fromJson(response.data);
+        ProductModel product = ProductModel.fromJson(response.data['data']);
         completer.complete(product);
       },
       onError: (error) {
@@ -189,12 +188,12 @@ class _BodyState extends State<Body> {
     return completer.future;
   }
 
-  Future<bool> deleteProduct(String cartItem) {
+  Future<bool> deleteProduct(String id) {
     final completer = Completer<bool>();
 
-    ApiUtil.getInstance()!.get(
+    ApiUtil.getInstance()!.delete(
       // delete
-      url: "${ApiEndpoint.userCart}/$cartItem",
+      url: "${ApiEndpoint.userCart}/$id",
       onSuccess: (response) {
         completer.complete(true);
       },
@@ -270,10 +269,10 @@ class _BodyState extends State<Body> {
         borderRadius: BorderRadius.circular(15),
       ),
       child: FutureBuilder<ProductModel>(
-        future: getProductWithID(cartItem.productId),
+        future: getProductWithID(cartItem.id),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            Product product = snapshot.data as Product;
+            ProductModel product = snapshot.data as ProductModel;
             return Row(
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -281,16 +280,16 @@ class _BodyState extends State<Body> {
                 Expanded(
                   flex: 8,
                   child: ProductShortDetailCard(
-                    productId: product.id,
+                    product: product,
                     onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => ProductDetailsScreen(
-                      //       productId: product.id,
-                      //     ),
-                      //   ),
-                      // );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailsScreen(
+                            product: product,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -319,27 +318,13 @@ class _BodyState extends State<Body> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        FutureBuilder<CartItem>(
-                          // future: UserDatabaseHelper()
-                          //     .getCartItemFromId(cartItemId),
-                          builder: (context, snapshot) {
-                            int itemCount = 0;
-                            if (snapshot.hasData) {
-                              final cartItem = snapshot.data;
-                              itemCount = cartItem!.itemCount;
-                            } else if (snapshot.hasError) {
-                              final error = snapshot.error.toString();
-                              Logger().e(error);
-                            }
-                            return Text(
-                              "$itemCount",
-                              style: const TextStyle(
-                                color: kPrimaryColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            );
-                          },
+                        Text(
+                          "${cartItem.itemCount}",
+                          style: const TextStyle(
+                            color: kPrimaryColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         InkWell(
@@ -487,25 +472,25 @@ class _BodyState extends State<Body> {
 
   void shutBottomSheet() {
     if (bottomSheetHandler != null) {
-      bottomSheetHandler.close();
+      bottomSheetHandler!.close();
     }
   }
 
-  Future<void> arrowUpCallback(String cartItemId) async {
+  Future<void> arrowUpCallback(String id) async {
     shutBottomSheet();
-    final future = UserDatabaseHelper().increaseCartItemCount(cartItemId);
-    future.then((status) async {
-      if (status) {
-        await refreshPage();
-      } else {
-        throw "Couldn't perform the operation due to some unknown issue";
-      }
-    }).catchError((e) {
-      Logger().e(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Something went wrong"),
-      ));
-    });
+    final future = ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.userCart}/$id/increase",
+      onSuccess: (response) {
+        // Do nothing, just return
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+      },
+    );
     await showDialog(
       context: context,
       builder: (context) {
@@ -517,21 +502,21 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Future<void> arrowDownCallback(String cartItemId) async {
+  Future<void> arrowDownCallback(String id) async {
     shutBottomSheet();
-    final future = UserDatabaseHelper().decreaseCartItemCount(cartItemId);
-    future.then((status) async {
-      if (status) {
-        await refreshPage();
-      } else {
-        throw "Couldn't perform the operation due to some unknown issue";
-      }
-    }).catchError((e) {
-      Logger().e(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Something went wrong"),
-      ));
-    });
+    final future = ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.userCart}/$id/decrease",
+      onSuccess: (response) {
+        // Do nothing, just return
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+      },
+    );
     await showDialog(
       context: context,
       builder: (context) {

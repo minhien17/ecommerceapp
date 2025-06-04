@@ -34,19 +34,16 @@ class CartItem extends Model {
 }
 
 class CartItemModel {
-  String? _cartId;
   String? _productId;
   int? _itemCount;
 
   CartItemModel();
 
   CartItemModel.fromJson(Map<String, dynamic> json) {
-    _cartId = json['cart_id'];
     _productId = json['product_id'];
     _itemCount = json['item_count'];
   }
 
-  String get id => _cartId ?? "";
-  String get productId => _productId ?? "";
+  String get id => _productId ?? "";
   int get itemCount => _itemCount ?? 0;
 }

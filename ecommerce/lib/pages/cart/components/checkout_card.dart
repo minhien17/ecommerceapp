@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
+import '../../../models/cart_item_model.dart';
+import '../../../models/product_model.dart';
 import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 
 class CheckoutCard extends StatelessWidget {
   final VoidCallback onCheckoutPressed;
+  final List<CartItemModel> cartItems;
+
   const CheckoutCard({
     Key? key,
     required this.onCheckoutPressed,
+    required this.cartItems,
   }) : super(key: key);
 
   @override
@@ -41,7 +51,7 @@ class CheckoutCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 FutureBuilder<num>(
-                  future: UserDatabaseHelper().cartTotal,
+                  future: getCartTotal(),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
                       final cartTotal = snapshot.data;
@@ -75,5 +85,40 @@ class CheckoutCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<num> getCartTotal() async {
+    final Completer<num> completer = Completer();
+    num total = 0.0;
+    for (final doc in cartItems) {
+      CartItemModel item = doc;
+      String productId = item.id;
+      int itemsCount = item.itemCount;
+      final product = await getProductWithID(productId);
+
+      total += (itemsCount * (product.discountPrice));
+    }
+    return total;
+  }
+
+  Future<ProductModel> getProductWithID(String productId) async {
+    final completer = Completer<ProductModel>();
+
+    ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.product}/$productId",
+      onSuccess: (response) {
+        ProductModel product = ProductModel.fromJson(response.data['data']);
+        completer.complete(product);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.completeError(error); // note: cẩn thận với lỗi
+      },
+    );
+    return completer.future;
   }
 }

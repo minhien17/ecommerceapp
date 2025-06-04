@@ -17,6 +17,7 @@ class ApiEndpoint {
   static String userInfor = "$DOMAIN/users/infor";
   static String productYouLike = "$DOMAIN/users/favourite";
   static String userCart = "$DOMAIN/users/cart";
+  static String updateUser = "$DOMAIN/users/update";
 
   // end point product
   static String product = "$DOMAIN/products";

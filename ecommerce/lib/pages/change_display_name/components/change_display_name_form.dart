@@ -1,7 +1,14 @@
+import 'dart:async';
+
+import 'package:ecommerce/models/user_model.dart';
+import 'package:ecommerce/shared_preference.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
 import '../../../services/authentication/authentification_service.dart';
 import '../../../size_config.dart';
@@ -55,8 +62,15 @@ class _ChangeDisplayNameFormState extends State<ChangeDisplayNameForm> {
                   );
                 },
               );
-              ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Display Name updated")));
+              uploadFuture.then((_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Display Name updated")),
+                );
+              }).catchError((error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to update Display Name")),
+                );
+              });
             },
           ),
         ],
@@ -87,12 +101,12 @@ class _ChangeDisplayNameFormState extends State<ChangeDisplayNameForm> {
   }
 
   Widget buildCurrentDisplayNameField() {
-    return StreamBuilder<User?>(
-      stream: AuthentificationService().userChanges,
+    return FutureBuilder<String>(
+      future: getCurrentUserModel(),
       builder: (context, snapshot) {
         String displayName = '';
         if (snapshot.hasData && snapshot.data != null)
-          displayName = snapshot.data!.displayName ?? '';
+          displayName = snapshot.data ?? '';
         final textField = TextFormField(
           controller: currentDisplayNameController,
           decoration: InputDecoration(
@@ -116,11 +130,27 @@ class _ChangeDisplayNameFormState extends State<ChangeDisplayNameForm> {
   }
 
   Future<void> changeDisplayNameButtonCallback() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      await AuthentificationService()
-          .updateCurrentUserDisplayName(newDisplayNameController.text);
-      print("Display Name updated to ${newDisplayNameController.text} ...");
-    }
+    if (!_formKey.currentState!.validate()) return;
+
+    final newDisplayName = newDisplayNameController.text.trim();
+    final completer = Completer<void>();
+
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.updateUser, // endpoint cập nhật user
+      body: {"name": newDisplayName}, // truyền vào body
+      onSuccess: (response) async {
+        await SharedPreferenceUtil.saveUsername(newDisplayName);
+        completer.complete();
+      },
+      onError: (error) {
+        completer.completeError(error);
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<String> getCurrentUserModel() async {
+    return await SharedPreferenceUtil.getUsername();
   }
 }

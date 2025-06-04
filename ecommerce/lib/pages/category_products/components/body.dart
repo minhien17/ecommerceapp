@@ -146,7 +146,7 @@ class _BodyState extends State<Body> {
       url: ApiEndpoint.product,
       params: {"category": EnumToString.convertToString(widget.productType)},
       onSuccess: (response) {
-        List<ProductModel> products = (response.data as List)
+        List<ProductModel> products = (response.data['data'] as List)
             .map((json) => ProductModel.fromJson(json))
             .toList();
         completer.complete(products);

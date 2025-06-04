@@ -135,9 +135,9 @@ class _BodyState extends State<Body> {
   }
 
   Widget buildOrderedProductItem(OrderedProduct orderedProduct) {
-    return FutureBuilder<Product>(
-      future: ProductDatabaseHelper()
-          .getProductWithID(orderedProduct.productUid ?? ''),
+    return FutureBuilder<ProductModel>(
+      // future: ProductDatabaseHelper()
+      //     .getProductWithID(orderedProduct.productUid ?? ''),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final product = snapshot.data;
@@ -189,7 +189,7 @@ class _BodyState extends State<Body> {
                     ),
                   ),
                   child: ProductShortDetailCard(
-                    productId: product!.id,
+                    product: product as ProductModel,
                     onPressed: () {
                       // Navigator.push(
                       //   context,

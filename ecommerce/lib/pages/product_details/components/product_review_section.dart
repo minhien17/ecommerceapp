@@ -113,7 +113,7 @@ class ProductReviewsSection extends StatelessWidget {
     ApiUtil.getInstance()!.get(
       url: "${ApiEndpoint.review}/$productId",
       onSuccess: (response) {
-        List<ReviewModel> reviews = (response.data as List)
+        List<ReviewModel> reviews = (response.data['data'] as List)
             .map((json) => ReviewModel.fromJson(json))
             .toList();
         completer.complete(reviews);

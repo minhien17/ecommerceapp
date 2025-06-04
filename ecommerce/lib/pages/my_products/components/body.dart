@@ -150,19 +150,20 @@ class _BodyState extends State<Body> {
         DismissDirection.endToStart: 0.65,
         DismissDirection.startToEnd: 0.65,
       },
-      child: ProductShortDetailCard(
-        productId: product.id,
-        onPressed: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => ProductDetailsScreen(
-          //       productId: product.id,
-          //     ),
-          //   ),
-          // );
-        },
-      ),
+      child: Text(""),
+      // ProductShortDetailCard(
+      //   product: product,
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(
+      //         builder: (context) => ProductDetailsScreen(
+      //           productId: product.id,
+      //         ),
+      //       ),
+      //     );
+      //   },
+      // ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
           final confirmation = await showConfirmationDialog(

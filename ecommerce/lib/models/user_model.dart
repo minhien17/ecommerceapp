@@ -24,11 +24,13 @@ class UserModel {
     _image = json['image'];
   }
 
-  String get email => _email ?? "name";
+  String get email => _email ?? "email";
 
   String get username => _username ?? "username";
 
   String get userid => _userid ?? "id";
 
-  String get image => _image ?? "image";
+  String get image =>
+      _image ??
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlRM2-AldpZgaraCXCnO5loktGi0wGiNPydQ&s";
 }

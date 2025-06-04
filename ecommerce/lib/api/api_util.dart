@@ -139,13 +139,80 @@ class ApiUtil {
     }
   }
 
-  void delete(
-      {required String url,
-      Map<String, dynamic> params = const {},
-      required Function(BaseResponse response) onSuccess,
-      required Function(dynamic error) onError,
-      bool isCancel = false}) async {
-    // fix
+  void delete({
+    required String url,
+    Map<String, dynamic> params = const {},
+    required Function(BaseResponse response) onSuccess,
+    required Function(dynamic error) onError,
+    bool isCancel = false,
+  }) async {
+    String token = await SharedPreferenceUtil.getToken();
+    var uri = Uri.parse(url).replace(
+        queryParameters:
+            params.map((key, value) => MapEntry(key, value.toString())));
+    try {
+      print('--- DELETE Request ---');
+      print('URL: $uri');
+      var res = await http.delete(
+        uri,
+        headers: {
+          "authorization": 'Bearer $token',
+          "content-type": 'application/json; charset=UTF-8'
+        },
+      ).timeout(const Duration(seconds: 10));
+      print('--- DELETE Response ---');
+      print('Status code: ${res.statusCode}');
+      print('Body: ${res.body}');
+      var data = jsonDecode(res.body);
+      if (res.statusCode >= 400) {
+        final message = data['message'] ?? 'Lỗi không xác định';
+        onError(message); // chỉ truyền Strings
+      } else {
+        if (onSuccess != null) onSuccess(getBaseResponse2(res));
+      }
+    } catch (e) {
+      print('Something really unknown: $e');
+      if (onError != null) onError(e);
+    }
+  }
+
+  Future<void> patch({
+    required String url,
+    Map<String, dynamic>? body,
+    Map<String, dynamic> params = const {},
+    required Function(BaseResponse response) onSuccess,
+    required Function(dynamic error) onError,
+  }) async {
+    String token = await SharedPreferenceUtil.getToken();
+    var uri = Uri.parse(url).replace(
+        queryParameters:
+            params.map((key, value) => MapEntry(key, value.toString())));
+    try {
+      print('--- PATCH Request ---');
+      print(body);
+      print('URL: $uri');
+      var res = await http.patch(
+        uri,
+        body: jsonEncode(body),
+        headers: {
+          "authorization": 'Bearer $token',
+          "content-type": 'application/json; charset=UTF-8'
+        },
+      ).timeout(const Duration(seconds: 10));
+      print('--- PATCH Response ---');
+      print('Status code: ${res.statusCode}');
+      print('Body: ${res.body}');
+      var data = jsonDecode(res.body);
+      if (res.statusCode >= 400) {
+        final message = data['message'] ?? 'Lỗi không xác định';
+        onError(message); // chỉ truyền String
+      } else {
+        if (onSuccess != null) onSuccess(getBaseResponse2(res));
+      }
+    } catch (e) {
+      print('Something really unknown: $e');
+      if (onError != null) onError(e);
+    }
   }
 
   BaseResponse getBaseResponse2(http.Response response) {
