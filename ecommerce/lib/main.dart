@@ -9,8 +9,8 @@ Future<void> main() async {
   await Firebase.initializeApp();
   await Supabase.initialize(
       anonKey:
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpem5vbm9maW56eHp6a29lZm1wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4NjQwMTMsImV4cCI6MjA2MDQ0MDAxM30.CFPRE-kcXY3VAm6ddzZjXa3NE_QczscD64CTbwjXF_4",
-      url: "https://biznonofinzxzzkoefmp.supabase.co");
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ma2x5YmNmcGRjYmphZHlvdHduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDkzNTMsImV4cCI6MjA2MjI4NTM1M30.Ey7RRpqLR22DKCgzB0Ip1JOD2oCWbFnBupWubKxqw0M",
+      url: "https://mfklybcfpdcbjadyotwn.supabase.co");
   runApp(MyApp());
 }
 

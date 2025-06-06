@@ -22,11 +22,16 @@ import '../../manage_addresses/manage_addresses_screen.dart';
 import '../../my_orders/my_orders_screen.dart';
 import '../../my_products/my_products_screen.dart';
 
-class HomeScreenDrawer extends StatelessWidget {
+class HomeScreenDrawer extends StatefulWidget {
   const HomeScreenDrawer({
     Key? key,
   }) : super(key: key);
 
+  @override
+  State<HomeScreenDrawer> createState() => _HomeScreenDrawerState();
+}
+
+class _HomeScreenDrawerState extends State<HomeScreenDrawer> {
   Future<UserModel> getUser() async {
     String username = await SharedPreferenceUtil.getUsername();
     String email = await SharedPreferenceUtil.getEmail();
@@ -39,9 +44,9 @@ class HomeScreenDrawer extends StatelessWidget {
 
   Future<String> getImage() async {
     String image = await SharedPreferenceUtil.getImage();
-
     return image;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +248,9 @@ class HomeScreenDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChangeDisplayPictureScreen(),
-                ));
+                )).then((_) {
+              setState(() {}); // Làm mới UI sau khi quay lại
+            });
           },
         ),
         ListTile(
@@ -259,7 +266,9 @@ class HomeScreenDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => ChangeDisplayNameScreen(),
-                ));
+                )).then((_) {
+              setState(() {}); // Làm mới UI sau khi quay lại
+            });
           },
         ),
         ListTile(

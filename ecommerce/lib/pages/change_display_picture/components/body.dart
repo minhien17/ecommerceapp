@@ -1,8 +1,14 @@
 import 'dart:io';
+import 'package:ecommerce/api/api_end_point.dart';
+import 'package:ecommerce/api/api_util.dart';
+import 'package:ecommerce/common/loading.dart';
+import 'package:ecommerce/common/widgets/flutter_toast.dart';
+import 'package:ecommerce/shared_preference.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../exceptions/local_files/local_file_handling.dart';
@@ -14,7 +20,12 @@ import '../../../size_config.dart';
 import '../provider_models/body_model.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 
-class Body extends StatelessWidget {
+class Body extends StatefulWidget {
+  @override
+  State<Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<Body> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -62,8 +73,8 @@ class Body extends StatelessWidget {
 
   Widget buildDisplayPictureAvatar(
       BuildContext context, ChosenImage bodyState) {
-    return StreamBuilder(
-      stream: UserDatabaseHelper().currentUserDataStream,
+    return FutureBuilder(
+      future: SharedPreferenceUtil.getImage(), //
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           final error = snapshot.error;
@@ -74,9 +85,7 @@ class Body extends StatelessWidget {
           // nếu đường dẫn ảnh null
           backImage = MemoryImage(bodyState.chosenImage.readAsBytesSync());
         } else if (snapshot.hasData && snapshot.data != null) {
-          final data = snapshot.data?.data() as Map<String, dynamic>;
-          final String? url = data[UserDatabaseHelper.DP_KEY] as String?;
-          if (url != null) backImage = NetworkImage(url);
+          if (snapshot.data != null) backImage = NetworkImage(snapshot.data!);
         }
         return CircleAvatar(
           radius: SizeConfig.screenWidth * 0.3,
@@ -130,8 +139,7 @@ class Body extends StatelessWidget {
     return DefaultButton(
       text: "Upload Picture",
       press: () {
-        final Future uploadFuture =
-            uploadImageToFirestorage(context, bodyState);
+        final Future uploadFuture = uploadImageToSupabase(context, bodyState);
         showDialog(
           context: context,
           builder: (context) {
@@ -147,37 +155,39 @@ class Body extends StatelessWidget {
     );
   }
 
-  Future<void> uploadImageToFirestorage(
+  Future<void> uploadImageToSupabase(
       BuildContext context, ChosenImage bodyState) async {
-    bool uploadDisplayPictureStatus = false;
+    final supabase = Supabase.instance.client;
+    const bucketName = 'ecommerce';
+
     String snackbarMessage = '';
-
     try {
-      final downloadUrl = await FirestoreFilesAccess().uploadFileToPath(
-          bodyState.chosenImage,
-          UserDatabaseHelper().getPathForCurrentUserDisplayPicture());
+      String email = await SharedPreferenceUtil.getEmail();
 
-      uploadDisplayPictureStatus = await UserDatabaseHelper()
-          .uploadDisplayPictureForCurrentUser(downloadUrl);
-      if (uploadDisplayPictureStatus == true) {
-        snackbarMessage = "Display Picture updated successfully";
+      final path = 'user/display_picture/$email.jpg';
+
+      final response = await supabase.storage.from('ecommerce').upload(
+            path, // thay đổi từ path
+            bodyState.chosenImage, // sử dụng chosenImage từ bodyState
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      if (response.isNotEmpty) {
+        final publicUrl = supabase.storage.from(bucketName).getPublicUrl(path);
+
+        await postURL(publicUrl);
+        Logger().i("Image URL: $publicUrl");
       } else {
-        throw "Coulnd't update display picture due to unknown reason";
+        throw Exception('Upload failed: empty response');
       }
-    } on FirebaseException catch (e) {
-      Logger().w("Firebase Exception: $e");
-      print(e);
-      snackbarMessage = "Something went wrong";
+
+      snackbarMessage = "Display picture updated successfully";
     } catch (e) {
-      // Logger().w("Unknown Exception: $e");
-      print(e);
-      snackbarMessage = "Something went wrong";
+      Logger().w("Upload Error: $e");
+      snackbarMessage = "Something went wrong during upload";
     } finally {
-      Logger().i(snackbarMessage);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(snackbarMessage),
-        ),
+        SnackBar(content: Text(snackbarMessage)),
       );
     }
   }
@@ -236,5 +246,20 @@ class Body extends StatelessWidget {
         ),
       );
     }
+  }
+
+  Future<void> postURL(String url) async {
+    await SharedPreferenceUtil.saveImage(url);
+
+    ApiUtil.getInstance()!.post(
+        url: ApiEndpoint.updateUser,
+        body: {
+          "picture": url, // Cập nhật URL ảnh đại diện
+        },
+        onSuccess: (response) {},
+        onError: (error) {
+          Logger().e("Error updating display picture: $error");
+          toastInfo(msg: "failed to update display picture");
+        });
   }
 }
