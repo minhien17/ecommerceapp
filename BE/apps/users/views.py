@@ -99,13 +99,11 @@ def signup(request):
 @api_view(['GET'])
 def cart(request):
     auth_header = request.headers.get("authorization")
-    print(auth_header)
     if not auth_header or not auth_header.startswith("Bearer "):
         return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
 
     parts = auth_header.split(" ")
     user_id = parts[1]
-    print(user_id)
     if not user_id:
         return api_response(data=None, message="Missing user_id", code=400, status=400)
     try:
@@ -131,7 +129,13 @@ def remove_from_cart(request, productid):
 
 @api_view(['POSt'])
 def update_user(request):
-    user_id = request.data.get("user_id")
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
+    
     if not user_id:
         return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
     try:
@@ -156,3 +160,37 @@ def update_user(request):
         return api_response(data={"success": True, "user": serializer.data}, message="Update user success", code=200, status=200)
     except User.DoesNotExist:
         return api_response(data={"success": False}, message="User not found", code=404, status=404)
+
+@api_view(['POST'])
+def change_password(request):
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
+
+    if not user_id:
+        return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
+
+    try:
+        user = User.objects.get(user_id=user_id)
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return api_response(data={"success": False}, message="Missing password fields", code=400, status=400)
+
+        # Kiểm tra mật khẩu hiện tại
+        if user.password != current_password:
+            return api_response(data={"success": False}, message="Current password is incorrect", code=400, status=400)
+
+        # Cập nhật mật khẩu mới
+        user.password = new_password
+        user.save()
+
+        return api_response(data={"success": True}, message="Password updated successfully", code=200, status=200)
+    except User.DoesNotExist:
+        return api_response(data={"success": False}, message="User not found", code=404, status=404)
+    except Exception as e:
+        return api_response(data={"success": False}, message="An error occurred", code=500, status=500, errMessage=str(e))

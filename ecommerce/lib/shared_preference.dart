@@ -5,6 +5,7 @@ class SPrefCache {
   static const KEY_USERNAME = 'USERNAME';
   static const KEY_EMAIL = 'EMAIL';
   static const KEY_IMAGE = 'USER_IMAGE';
+  static const KEY_PHONE = 'PHONE'; // Thêm key cho phone
 }
 
 class SharedPreferenceUtil {
@@ -30,6 +31,11 @@ class SharedPreferenceUtil {
     await prefs.setString(SPrefCache.KEY_IMAGE, imageUrl);
   }
 
+  static Future savePhone(String phone) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(SPrefCache.KEY_PHONE, phone); // Lưu phone
+  }
+
   // get
 
   static Future<String> getUsername() async {
@@ -52,6 +58,11 @@ class SharedPreferenceUtil {
     return prefs.getString(SPrefCache.KEY_USERID) ?? '';
   }
 
+  static Future<String> getPhone() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString(SPrefCache.KEY_PHONE) ?? '0000'; // Lấy phone
+  }
+
   // clear
   static Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,5 +70,6 @@ class SharedPreferenceUtil {
     await prefs.remove(SPrefCache.KEY_USERNAME);
     await prefs.remove(SPrefCache.KEY_EMAIL);
     await prefs.remove(SPrefCache.KEY_IMAGE);
+    await prefs.remove(SPrefCache.KEY_PHONE); // Xóa phone
   }
 }

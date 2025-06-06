@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/custom_suffix_icon.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
@@ -59,6 +64,11 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
                     );
                   },
                 );
+                updateFuture.then((_) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Password updated")),
+                  );
+                });
               },
             ),
           ],
@@ -133,39 +143,34 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
   }
 
   Future<void> changePasswordButtonCallback() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      final AuthentificationService authService = AuthentificationService();
-      bool currentPasswordValidation = await authService
-          .verifyCurrentUserPassword(currentPasswordController.text);
-      if (currentPasswordValidation == false) {
-        print("Current password provided is wrong");
-      } else {
-        bool updationStatus = false;
-        String snackbarMessage = '';
-        try {
-          updationStatus = await authService.changePasswordForCurrentUser(
-              newPassword: newPasswordController.text);
-          if (updationStatus == true) {
-            snackbarMessage = "Password changed successfully";
-          } else {
-            throw FirebaseCredentialActionAuthUnknownReasonFailureException(
-                message:
-                    "Failed to change password, due to some unknown reason");
-          }
-        } on MessagedFirebaseAuthException catch (e) {
-          snackbarMessage = e.message;
-        } catch (e) {
-          snackbarMessage = e.toString();
-        } finally {
-          Logger().i(snackbarMessage);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(snackbarMessage),
-            ),
-          );
+    if (!_formKey.currentState!.validate()) return;
+
+    final currentPassword = currentPasswordController.text.trim();
+    final newPassword = newPasswordController.text.trim();
+    final completer = Completer<void>();
+
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.updateUser, // Endpoint cập nhật user
+      body: {
+        "current_password": currentPassword, // Truyền mật khẩu hiện tại
+        "new_password": newPassword, // Truyền mật khẩu mới
+      },
+      onSuccess: (response) async {
+        final data = response.data;
+        if (data['success'] == true) {
+          toastInfo(msg: "Password changed successfully");
+          completer.complete();
+        } else {
+          toastInfo(msg: data['message'] ?? "Failed to change password");
+          completer.completeError("Failed to change password");
         }
-      }
-    }
+      },
+      onError: (error) {
+        toastInfo(msg: error.toString());
+        completer.completeError(error);
+      },
+    );
+
+    return completer.future;
   }
 }
