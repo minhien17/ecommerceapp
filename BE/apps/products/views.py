@@ -19,22 +19,22 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
 def product_detail(request, productid):
     try:
         product = Product.objects.get(product_id=productid)
-        images = [product.image] if product.image else []
-        search_tags = product.search_tags.split(',') if product.search_tags else []
+        images = [product.image] if product.image else None
+        search_tags = product.search_tags.split(',') if product.search_tags else None
         data = {
-            "product_id": product.product_id,
-            "description": product.description,
-            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
-            "highlights": product.highlight,
+            "product_id": product.product_id or None,
+            "description": product.description or None,
+            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+            "highlights": product.highlight or None,
             "images": images,
-            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
-            "owner": product.owner,
-            "product_type": product.product_type,
-            "rating": float(product.rating) if product.rating else 0,
+            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+            "owner": product.owner or None,
+            "product_type": product.product_type or None,
+            "rating": float(product.rating) if product.rating is not None else None,
             "search_tags": search_tags,
-            "seller": product.seller,
-            "title": product.title,
-            "variant": product.variant
+            "seller": product.seller or None,
+            "title": product.title or None,
+            "variant": product.variant or None
         }
         return api_response(data=data, message="Get product detail success")
     except Product.DoesNotExist:
@@ -49,7 +49,6 @@ def product_list(request):
     if category:
         qs = qs.filter(product_type=category)
     if query:
-        # Tìm trong title, description, highlight, variant, seller, search_tags
         qs = qs.filter(
             Q(title__icontains=query) |
             Q(description__icontains=query) |
@@ -60,22 +59,22 @@ def product_list(request):
         )
     data = []
     for product in qs:
-        images = [product.image] if product.image else []
-        search_tags = product.search_tags.split(',') if product.search_tags else []
+        images = [product.image] if product.image else None
+        search_tags = product.search_tags.split(',') if product.search_tags else None
         data.append({
-            "product_id": product.product_id,
-            "description": product.description,
-            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
-            "highlights": product.highlight,
+            "product_id": product.product_id or None,
+            "description": product.description or None,
+            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+            "highlights": product.highlight or None,
             "images": images,
-            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
-            "owner": product.owner,
-            "product_type": product.product_type,
-            "rating": float(product.rating) if product.rating else 0,
+            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+            "owner": product.owner or None,
+            "product_type": product.product_type or None,
+            "rating": float(product.rating) if product.rating is not None else None,
             "search_tags": search_tags,
-            "seller": product.seller,
-            "title": product.title,
-            "variant": product.variant
+            "seller": product.seller or None,
+            "title": product.title or None,
+            "variant": product.variant or None
         })
     return api_response(data=data, message="Get product list success")
 
@@ -89,16 +88,15 @@ def review(request, productid):
         reviews = Review.objects.filter(product__product_id=productid)
         data = []
         for r in reviews:
-            # Lấy tên người dùng từ bảng users
             try:
                 user = User.objects.get(user_id=r.reviewer_id)
                 reviewer_name = user.username
             except User.DoesNotExist:
-                reviewer_name = ""
+                reviewer_name = None
             data.append({
-                "rating": r.rating,
-                "review": r.review,
-                "review_uid": r.reviewer_id,
+                "rating": r.rating if r.rating is not None else None,
+                "review": r.review or None,
+                "review_uid": r.reviewer_id or None,
                 "review_name": reviewer_name
             })
         return api_response(data=data, message="Get reviews success")
