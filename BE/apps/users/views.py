@@ -16,7 +16,7 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'display_picture', 'favourite_products', 'phone']
+        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']  # Thêm 'email'
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
@@ -64,6 +64,7 @@ def signup(request):
     try:
         username = request.data.get('username')
         password = request.data.get('password')
+        email = request.data.get('email', '')  # Thêm dòng này
         display_picture = request.data.get('display_picture', '')
         favourite_products = request.data.get('favourite_products', '')
         phone = request.data.get('phone', '')
@@ -78,6 +79,7 @@ def signup(request):
             user_id=user_id,
             username=username,
             password=password,
+            email=email,
             display_picture=display_picture,
             favourite_products=favourite_products,
             phone=phone
@@ -120,11 +122,14 @@ def update_user(request):
     try:
         user = User.objects.get(user_id=user_id)
         username = request.data.get("username")
+        email = request.data.get("email")  # Thêm dòng này
         display_picture = request.data.get("display_picture")
         favourite_products = request.data.get("favourite_products")
         phone = request.data.get("phone")
         if username:
             user.username = username
+        if email:  # Thêm dòng này
+            user.email = email
         if display_picture:
             user.display_picture = display_picture
         if favourite_products:
