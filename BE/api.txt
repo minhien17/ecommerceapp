@@ -1,22 +1,5 @@
-API 
-DOMAIN: …/api
-
-Cấu trúc api
-Mỗi api phải trả về:
-
-String? message;
-int? code;
-dynamic data;
-int? status;
-String? errMessage;
-
-
-Chú ý:
-Mấy cái liên quan đến picture là lưu list url link đến ảnh
-Ảnh thật được lưu vào storage của supabase
-Các list string: search_tags, image, 
 Product 
-1.	Product detail - get
+Product detail - get
 
 endpoint:
 “/products/productId”
@@ -27,10 +10,10 @@ res:
   "description": "string",            // Mô tả sản phẩm
   "discount_price": 9.0,              // Giá sau khi giảm (float)
   "highlights": "",                   // Các điểm nổi bật (string)
-  "images": ["string", ""],           // Danh sách URL ảnh (mảng string) - Có up luôn ảnh lên ko ??
+  "images": ["string", ""],           // Danh sách URL ảnh (mảng string) - ảnh lưu vào storage trong supabase.
   "original_price": 9.0,              // Giá gốc (float)
   "owner": "string",                  // ID hoặc tên người tạo sản phẩm
-  "product_type": "string",           // Loại sản phẩm (ví dụ: "electronics", "clothing")
+  "product_type": "string",      // enum: electronic, fashion, grocery, book, art, other.
   "rating": 0.0,                      // Điểm đánh giá (float từ 0 đến 5)
   "search_tags": [],                  // Mảng từ khóa tìm kiếm (mảng string)
   "seller": "string",                 // ID người bán
@@ -38,7 +21,7 @@ res:
   "variant": "string"                 // Biến thể (ví dụ: màu sắc, kích cỡ)
 }
 
-2.	Product list - get
+Product list - get
 
 “/products”
 
@@ -47,8 +30,84 @@ res:
 {}
 ]
 
+Product category
 
-3.	Review - post
+1 trong mấy cái product type: 
+electronic, fashion, grocery, book, art, other
+“/products?category=product_type”
+
+trả về list product như trên
+
+Product search
+“/products?category=product_type&query=shoe” // search trong category
+“/products?query=shoe” // search trong tất cả products
+
+trả về list products như trên
+
+ý tưởng xử lý backend
+
+Tạo product model
+
+# models.py
+from django.db import models
+from django.contrib.postgres.fields import ArrayField  # cần nếu dùng PostgreSQL
+
+class Product(models.Model):
+    product_id = models.CharField(max_length=255, primary_key=True)
+    title = models.TextField()
+    description = models.TextField()
+    highlights = models.TextField()
+    variant = models.TextField()
+    seller = models.TextField()
+    product_type = models.CharField(max_length=50)
+    original_price = models.FloatField()
+    discount_price = models.FloatField()
+    rating = models.FloatField()
+    images = ArrayField(models.URLField(), blank=True, default=list)  # nếu dùng PostgreSQL
+    search_tags = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+
+tạo api
+
+# views.py
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.db.models import Q
+from .models import Product
+from .serializers import ProductSerializer
+
+@api_view(['GET'])
+def search_products(request):
+    query = request.GET.get('query', '').lower()
+    category = request.GET.get('category', None)
+
+    if not query:
+        return Response({"error": "Missing query parameter"}, status=400)
+
+    qs = Product.objects.all()
+    if category:
+        qs = qs.filter(product_type=category)
+
+    tag_matches = qs.filter(search_tags__contains=[query])
+    text_matches = qs.filter(
+        Q(title__icontains=query) |
+        Q(description__icontains=query) |
+        Q(highlights__icontains=query) |
+        Q(variant__icontains=query) |
+        Q(seller__icontains=query)
+    )
+
+    # Gộp kết quả không trùng
+    final_qs = tag_matches.union(text_matches)
+
+    serializer = ProductSerializer(final_qs, many=True)
+    return Response(serializer.data)
+
+
+
+
+
+
+Review - post
 “/products/review/productid”
 
 header 
@@ -62,9 +121,10 @@ body = {
 
 res
 body = {
-	“success”:true}
+	“success”:true
+}
 
-4.	Review - get
+Review - get
 
 “/products/review/productid”
 
@@ -79,8 +139,10 @@ body = {
 }
 ]
 
-5.	Product you like - get
-“/users/favourite”
+Product you like - get
+“/users/favourite” 
+lấy product_id từ favourite_products trong users
+xong lấy product list trong products
 
 header
 {token: bearer userUid} - mang token là id để định danh người dùng
@@ -91,120 +153,12 @@ res cũng trả về list các product như trên
 {}
 ]
 
-User
+Product you like - post
+“/users/favourite/productId”
 
-1.	Login - post
+kiểm tra trong list favourite có id này không
+có thì remove 
+không thì add id vào
 
-“user/login”
-
-req
-body = {“email”: “String”, “password”: “String”}
-
-res
-{ 
-“userid”:”string”,
-“username”:”String”,
-“email”:”String”,
-“image”:”String” – Url đến ảnh, ảnh thật được lưu vào supabase storage
-}
-
-2.	SignUp - post
-“user/signup”
-
-req
-body = {“username”:”String”, “email”:”string”, “password”:”String”}
-
-res
-body = {“is_success”:”true”}
-
-
-3.	Cart - get
-“/user/cart”
-
-header - tương tự 
-
-res - trả về list sản phẩm
-body = 
-[
-{
-“product_id”:”String”,
-“quantity”:3,
-“product”:{
-	"images": “String”, // ảnh đầu trong list
-	"discount_price": 9.0,
-	"title": "string",
-}
-}
-]
-
-4.	Cart - post - thêm sản phẩm vào giỏ hàng
-“/user/cart”
-
-header - tương tự
-
-req:
-body = {
-	“product_id”:”String”,
-	“quantity”:2
-	}
-
-res: 
-body = {
-	“success”: true
-}
-
-5.	Cart - delete - xóa sản phẩm
-“/user/cart/productid”
-
-res: trả về list sản phẩm tương tự cart get
-
-6.	Picture, name, number, password
-
-Endpoint: PATCH /user
-
-Mô tả: Cập nhật thông tin cá nhân của người dùng như ảnh đại diện, tên, số điện thoại hoặc mật khẩu.
-
-Phương thức: PATCH
-
-Yêu cầu xác thực: Có (cần token đăng nhập hợp lệ)
-
-{
-  "picture": "https://example.com/avatar.jpg",
-  "name": "Nguyễn Văn A",
-  "number": "0987654321",
-  "password": "new_secure_password"
-}
-
-res 
-{
-  "success": true,
-  "user": {
-    "id": “”,
-    "picture": "https://example.com/avatar.jpg",
-    "name": "Nguyễn Văn A",
-    "number": "0987654321"
-  }
-}
-
-thất bại
-{
-  "success": false,
-  "error": "INVALID_PASSWORD"
-}
-
-
-7.	Address - thêm sửa xóa
-
-{
-  "name": "Nguyễn Văn A",
-  "phone": "0912345678",
-  "street": "123 Nguyễn Trãi",
-  "city": "Hà Nội",
-  "district": "Hà Nội",
-  "is_default": true
-}
-
-8.	Ordered product - thêm
-
-“order_date”: “String”
-“product_uid”: “String”
+trả về 
+{“status”:true}

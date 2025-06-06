@@ -1,5 +1,9 @@
-from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.db.models import Q
+from .models import Product, Review
+from django.db import connection
+from rest_framework import status
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
     return Response({
@@ -8,99 +12,107 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
         "data": data,
         "status": status,
         "errMessage": errMessage
-    }, status=status
-    ,content_type='application/json; charset=utf-8' #truyền được ký tự tiếng việt
-    )
+    }, status=status, content_type='application/json; charset=utf-8')
 
-#get product
+# Product detail
 @api_view(['GET'])
 def product_detail(request, productid):
-    # Fake data
-    product = {
-        "product_id": productid,
-        "description": "Áo thun nam chất liệu cotton thoáng mát",
-        "discount_price": 9.0,
-        "highlights": "Thoáng mát, trẻ trung",
-        "images": [
-            "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
-        ],
-        "original_price": 12.0,
-        "owner": "user123",
-        "product_type": "clothing",
-        "rating": 4.5,
-        "search_tags": ["áo thun", "nam", "cotton"],
-        "seller": "user123",
-        "title": "Áo thun nam",
-        "variant": "Màu trắng, Size L"
-    }
-    return api_response(data=product, message="Get product detail success", code=200, status=200)
-
-#get list product
+    try:
+        product = Product.objects.get(product_id=productid)
+        images = [product.image] if product.image else []
+        search_tags = product.search_tags.split(',') if product.search_tags else []
+        data = {
+            "product_id": product.product_id,
+            "description": product.description,
+            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
+            "highlights": product.highlight,
+            "images": images,
+            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
+            "owner": product.owner,
+            "product_type": product.product_type,
+            "rating": float(product.rating) if product.rating else 0,
+            "search_tags": search_tags,
+            "seller": product.seller,
+            "title": product.title,
+            "variant": product.variant
+        }
+        return api_response(data=data, message="Get product detail success")
+    except Product.DoesNotExist:
+        return api_response(data=None, message="Product not found", code=404, status=404)
+    
+# Product list, filter, search
 @api_view(['GET'])
 def product_list(request):
-    # Fake data
-    products = [
-        {
-            "product_id": "1",
-            "description": "Áo thun nam chất liệu cotton thoáng mát",
-            "discount_price": 9.0,
-            "highlights": "Thoáng mát, trẻ trung",
-            "images": [
-                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2",
-                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
-            ],
-            "original_price": 12.0,
-            "owner": "user123",
-            "product_type": "clothing",
-            "rating": 4.5,
-            "search_tags": ["áo thun", "nam", "cotton"],
-            "seller": "user123",
-            "title": "Áo thun nam",
-            "variant": "Màu trắng, Size L"
-        },
-        {
-            "product_id": "2",
-            "description": "Quần jeans nữ co giãn",
-            "discount_price": 15.0,
-            "highlights": "Co giãn, thời trang",
-            "images": [
-                "https://biznonofinzxzzkoefmp.supabase.co/storage/v1/object/public/ecommerce/user/display_picture/sfDVgu50oyQt4iHk9pK0RZ0ikwh2"
-            ],
-            "original_price": 20.0,
-            "owner": "user456",
-            "product_type": "clothing",
-            "rating": 4.0,
-            "search_tags": ["quần jeans", "nữ", "co giãn"],
-            "seller": "user456",
-            "title": "Quần jeans nữ",
-            "variant": "Màu xanh, Size M"
-        }
-    ]
-    return api_response(data=products, message="Get product list success", code=200, status=200)
+    category = request.GET.get('category')
+    query = request.GET.get('query')
+    qs = Product.objects.all()
+    if category:
+        qs = qs.filter(product_type=category)
+    if query:
+        # Tìm trong title, description, highlight, variant, seller, search_tags
+        qs = qs.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(highlight__icontains=query) |
+            Q(variant__icontains=query) |
+            Q(seller__icontains=query) |
+            Q(search_tags__icontains=query)
+        )
+    data = []
+    for product in qs:
+        images = [product.image] if product.image else []
+        search_tags = product.search_tags.split(',') if product.search_tags else []
+        data.append({
+            "product_id": product.product_id,
+            "description": product.description,
+            "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
+            "highlights": product.highlight,
+            "images": images,
+            "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else 0,
+            "owner": product.owner,
+            "product_type": product.product_type,
+            "rating": float(product.rating) if product.rating else 0,
+            "search_tags": search_tags,
+            "seller": product.seller,
+            "title": product.title,
+            "variant": product.variant
+        })
+    return api_response(data=data, message="Get product list success")
 
-#review
+# Review GET & POST
+from .models import Review
+from apps.users.models import User
+
 @api_view(['GET', 'POST'])
 def review(request, productid):
     if request.method == 'GET':
-        # Fake data
-        reviews = [
-            {
-                "rating": 5,
-                "review": "Sản phẩm rất tốt!",
-                "review_uid": "user123",
-                "review_name": "Minh Hiển"
-            },
-            {
-                "rating": 4,
-                "review": "Chất lượng ổn, giao hàng nhanh.",
-                "review_uid": "user456",
-                "review_name": "Mai Lan"
-            }
-        ]
-        return api_response(data=reviews, message="Get reviews success", code=200, status=200)
+        reviews = Review.objects.filter(product__product_id=productid)
+        data = []
+        for r in reviews:
+            # Lấy tên người dùng từ bảng users
+            try:
+                user = User.objects.get(user_id=r.reviewer_id)
+                reviewer_name = user.username
+            except User.DoesNotExist:
+                reviewer_name = ""
+            data.append({
+                "rating": r.rating,
+                "review": r.review,
+                "review_uid": r.reviewer_id,
+                "review_name": reviewer_name
+            })
+        return api_response(data=data, message="Get reviews success")
     elif request.method == 'POST':
         rating = request.data.get("rating")
         review_text = request.data.get("review")
-        # Fake: luôn trả về thành công
-        return api_response(data={"success": True}, message="Add review success", code=200, status=200)
-
+        reviewer_id = request.headers.get('token') or request.data.get('reviewer_id')
+        if not (rating and review_text and reviewer_id):
+            return api_response(data=None, message="Missing data", code=400, status=400)
+        Review.objects.create(
+            review_id=f"{productid}_{reviewer_id}",
+            product_id=productid,
+            rating=rating,
+            review=review_text,
+            reviewer_id=reviewer_id
+        )
+        return api_response(data={"success": True}, message="Add review success")
