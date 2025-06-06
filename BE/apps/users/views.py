@@ -14,9 +14,17 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
     }, status=status)
 
 class UserSerializer(serializers.ModelSerializer):
+    favourite_products = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']  # Thêm 'email'
+        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']
+
+    def get_favourite_products(self, obj):
+        if obj.favourite_products:
+            return [item.strip() for item in obj.favourite_products.split(',') if item.strip()]
+        return []
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
@@ -35,6 +43,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             "product_type": obj.product.product_type,
             "rating": obj.product.rating,
         }
+
 
 @api_view(['POST'])
 def login(request):
@@ -113,7 +122,7 @@ def remove_from_cart(request, productid):
     except (Cart.DoesNotExist, CartItem.DoesNotExist):
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
 
-@api_view(['PATCH'])
+@api_view(['POSt'])
 def update_user(request):
     user_id = request.data.get("user_id")
     if not user_id:
