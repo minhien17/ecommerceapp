@@ -98,7 +98,14 @@ def signup(request):
 
 @api_view(['GET'])
 def cart(request):
-    user_id = request.query_params.get('user_id')
+    auth_header = request.headers.get("authorization")
+    print(auth_header)
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
+    print(user_id)
     if not user_id:
         return api_response(data=None, message="Missing user_id", code=400, status=400)
     try:

@@ -21,18 +21,14 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  final UsersProductsStream usersProductsStream = UsersProductsStream();
-
   @override
   void initState() {
     super.initState();
-    usersProductsStream.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    usersProductsStream.dispose();
   }
 
   @override
@@ -59,8 +55,6 @@ class _BodyState extends State<Body> {
                   SizedBox(
                     height: SizeConfig.screenHeight * 0.7,
                     child: StreamBuilder<List<String>>(
-                      stream:
-                          usersProductsStream.stream as Stream<List<String>>,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           final productsIds = snapshot.data;
@@ -109,7 +103,6 @@ class _BodyState extends State<Body> {
   }
 
   Future<void> refreshPage() {
-    usersProductsStream.reload();
     return Future<void>.value();
   }
 
