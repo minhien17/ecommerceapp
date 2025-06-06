@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import connection
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
     return Response({
