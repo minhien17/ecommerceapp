@@ -39,14 +39,16 @@ class _HomeScreenDrawerState extends State<HomeScreenDrawer> {
     String userid = await SharedPreferenceUtil.getToken();
 
     return UserModel.full(
-        email: email, userid: userid, username: username, image: image);
+        email: email,
+        userId: userid,
+        username: username,
+        displayPicture: image);
   }
 
   Future<String> getImage() async {
     String image = await SharedPreferenceUtil.getImage();
     return image;
   }
-
 
   @override
   Widget build(BuildContext context) {
