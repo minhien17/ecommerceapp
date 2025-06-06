@@ -4,6 +4,8 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from django.db import connection
+import uuid
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
     return Response({
@@ -23,13 +25,24 @@ class UserSerializer(serializers.ModelSerializer):
 # API login (thực tế)
 @api_view(['POST'])
 def login(request):
-    username = request.data.get('email')
+    username = request.data.get('username')
     password = request.data.get('password')
-    user = authenticate(username=username, password=password)
-    if user is not None:
-        serializer = UserSerializer(user)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT user_id, username, display_picture, favourite_products, phone FROM users WHERE username = %s AND password = %s",
+            [username, password]
+        )
+        row = cursor.fetchone()
+    if row:
+        data = {
+            "user_id": row[0],
+            "username": row[1],
+            "display_picture": row[2],
+            "favourite_products": row[3],
+            "phone": row[4]
+        }
         return api_response(
-            data=serializer.data,
+            data=data,
             message="Login success",
             code=200,
             status=200
@@ -45,21 +58,50 @@ def login(request):
 # Lấy danh sách user từ DB
 @api_view(['GET'])
 def get_users(request):
-    users = User.objects.all()
-    serializer = UserSerializer(users, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT user_id, username, display_picture, favourite_products, phone FROM users")
+        rows = cursor.fetchall()
+    data = [
+        {
+            "user_id": row[0],
+            "username": row[1],
+            "display_picture": row[2],
+            "favourite_products": row[3],
+            "phone": row[4]
+        }
+        for row in rows
+    ]
+    return Response(data, status=status.HTTP_200_OK)
 
 # Đăng ký tài khoản (thực tế)
 @api_view(['POST'])
 def signup(request):
-    username = request.data.get('username')
-    email = request.data.get('email')
-    password = request.data.get('password')
-    if User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists():
-        return api_response(data={"is_success": False}, message="Username or email already exists", code=400, status=400)
-    user = User.objects.create_user(username=username, email=email, password=password)
-    serializer = UserSerializer(user)
-    return api_response(data={"is_success": True, "user": serializer.data}, message="Signup success", code=201, status=201)
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        display_picture = request.data.get('display_picture', '')
+        favourite_products = request.data.get('favourite_products', '')
+        phone = request.data.get('phone', '')
+        user_id = request.data.get('user_id')
+        if not user_id:
+            user_id = f"u{uuid.uuid4().hex[:6]}"
+
+        # Kiểm tra username đã tồn tại chưa
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM users WHERE username = %s", [username])
+            if cursor.fetchone()[0] > 0:
+                return api_response(data={"is_success": False}, message="Username already exists", code=400, status=400)
+
+        # Insert user mới
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO users (user_id, username, password, display_picture, favourite_products, phone) VALUES (%s, %s, %s, %s, %s, %s)",
+                [user_id, username, password, display_picture, favourite_products, phone]
+            )
+
+        return api_response(data={"is_success": True}, message="Signup success", code=201, status=201)
+    except Exception as e:
+        return api_response(data=None, message="Signup failed", code=500, status=500, errMessage=str(e))
 
 # Giỏ hàng: TODO - cần model thực tế, tạm thời giữ nguyên fake
 FAKE_CART = [
@@ -74,38 +116,41 @@ FAKE_CART = [
     }
 ]
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 def cart(request):
-    if request.method == 'GET':
-        return api_response(data=FAKE_CART, message="Get cart success", code=200, status=200)
-    elif request.method == 'POST':
-        product_id = request.data.get('product_id')
-        for item in FAKE_CART:
-            if item['product_id'] == product_id:
-                return api_response(data={"success": False}, message="Product already in cart", code=400, status=400)
-        FAKE_CART.append({
-            "product_id": product_id,
-            "quantity": request.data.get('quantity', 1),
-            "product": {
-                "images": request.data.get('images', ''),
-                "discount_price": request.data.get('discount_price', 0),
-                "title": request.data.get('title', '')
-            }
-        })
-        return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
+    user_id = request.query_params.get('user_id')
+    if not user_id:
+        return api_response(data=None, message="Missing user_id", code=400, status=400)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT user_id FROM cart WHERE user_id = %s", [user_id])
+        rows = cursor.fetchall()
+    data = [
+        {
+            "user_id": row[0]
+        }
+        for row in rows
+    ]
+    return api_response(data=data, message="Get cart success", code=200, status=200)
 
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
-    found = False
-    for item in FAKE_CART:
-        if item['product_id'] == productid:
-            FAKE_CART.remove(item)
-            found = True
-            break
-    if not found:
-        return api_response(data=FAKE_CART, message="Product not found in cart", code=404, status=404)
-    return api_response(data=FAKE_CART, message="Remove from cart success", code=200, status=200)
-
+    user_id = request.query_params.get('user_id')
+    if not user_id:
+        return api_response(data=None, message="Missing user_id", code=400, status=400)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "DELETE FROM cartitems WHERE cart_id = %s AND product_id = %s RETURNING cart_id, product_id",
+            [user_id, productid]
+        )
+        row = cursor.fetchone()
+    if not row:
+        return api_response(data=None, message="Product not found in cart", code=404, status=404)
+    return api_response(
+        data={"user_id": row[0], "product_id": row[1]},
+        message="Remove from cart success",
+        code=200,
+        status=200
+    )
 # Cập nhật thông tin cá nhân (thực tế)
 @api_view(['PATCH'])
 def update_user(request):
