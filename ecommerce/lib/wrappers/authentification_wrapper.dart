@@ -24,7 +24,7 @@ class _AuthentificationWrapperState extends State<AuthentificationWrapper> {
 
   Future<bool> _checkLoggedIn() async {
     final token = await SharedPreferenceUtil.getToken();
-    return token != "";
+    return token != "h";
   }
 
   @override

@@ -11,7 +11,7 @@ class ApiEndpoint {
 
   // login, signup
   static String login = "$DOMAIN/users/login";
-  static String signup = "$DOMAIN/signup";
+  static String signup = "$DOMAIN/users/signup";
 
   // end point user
   static String userInfor = "$DOMAIN/users/infor";

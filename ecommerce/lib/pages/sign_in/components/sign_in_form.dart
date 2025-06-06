@@ -131,7 +131,8 @@ class _SignInFormState extends State<SignInForm> {
       AppLoading.show(context);
 
       var body = {
-        "email": emailFieldController.text.trim(),
+        // "email": emailFieldController.text.trim(),
+        "username": "Minh_Hien",
         "password": passwordFieldController.text.trim()
       };
 
@@ -142,10 +143,10 @@ class _SignInFormState extends State<SignInForm> {
           UserModel user = UserModel.fromJson(response.data['data']);
           // print(user);
 
-          SharedPreferenceUtil.saveToken(user.userid);
+          SharedPreferenceUtil.saveToken(user.userId);
           SharedPreferenceUtil.saveEmail(user.email);
           SharedPreferenceUtil.saveUsername(user.username);
-          SharedPreferenceUtil.saveImage(user.image);
+          SharedPreferenceUtil.saveImage(user.displayPicture);
           AppLoading.hide(context);
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => Home()),

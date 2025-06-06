@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ecommerce/components/custom_suffix_icon.dart';
 import 'package:ecommerce/components/default_button.dart';
 import 'package:ecommerce/constants.dart';
@@ -5,6 +7,10 @@ import 'package:ecommerce/pages/sign_up/sign_up_page.dart';
 import 'package:ecommerce/services/authentication/authentification_service.dart';
 import 'package:ecommerce/size_config.dart';
 import 'package:flutter/material.dart';
+
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 
 class SignUpForm extends StatefulWidget {
   @override
@@ -127,19 +133,36 @@ class _SignUpFormState extends State<SignUpForm> {
   }
 
   Future<void> signUpButtonCallback() async {
-    if (_formKey.currentState!.validate()) {
-      // goto complete profile page
-      final AuthentificationService authService = AuthentificationService();
-      bool signUpStatus = false;
-      String snackbarMessage;
-      try {
-        authService.signUp(
-            email: emailFieldController.text.trim(),
-            password: passwordFieldController.text.trim(),
-            callback: () {
-              Navigator.pop(context);
-            });
-      } catch (e) {}
-    }
+    if (!_formKey.currentState!.validate()) return;
+
+    final completer = Completer<void>();
+    final email = emailFieldController.text.trim();
+    final password = passwordFieldController.text.trim();
+
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.signup, // Endpoint đăng ký
+      body: {
+        "email": email,
+        "password": password,
+      },
+      onSuccess: (response) async {
+        final data = response.data;
+        if (data['success'] == true) {
+          toastInfo(msg: "Sign up successful!");
+          Navigator.pushNamed(context,
+              '/completeProfile'); // Điều hướng đến màn hình hoàn thiện hồ sơ
+          completer.complete();
+        } else {
+          toastInfo(msg: data['message'] ?? "Sign up failed!");
+          completer.completeError("Sign up failed!");
+        }
+      },
+      onError: (error) {
+        toastInfo(msg: error.toString());
+        completer.completeError(error);
+      },
+    );
+
+    return completer.future;
   }
 }
