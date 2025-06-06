@@ -14,6 +14,18 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
     }, status=status)
 
 class UserSerializer(serializers.ModelSerializer):
+    favourite_products = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']
+
+    def get_favourite_products(self, obj):
+        if obj.favourite_products:
+            return [item.strip() for item in obj.favourite_products.split(',') if item.strip()]
+        return []
+
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']  # Thêm 'email'
@@ -35,6 +47,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             "product_type": obj.product.product_type,
             "rating": obj.product.rating,
         }
+
 
 @api_view(['POST'])
 def login(request):
