@@ -19,7 +19,7 @@ import 'package:material_tag_editor/tag_editor.dart';
 import 'package:provider/provider.dart';
 
 class EditProductForm extends StatefulWidget {
-  final Product product;
+  final ProductModel product;
   EditProductForm({
     Key? key,
     required this.product,
@@ -47,7 +47,7 @@ class _EditProductFormState extends State<EditProductForm> {
   final TextEditingController sellerFieldController = TextEditingController();
 
   bool newProduct = true;
-  Product product = Product('');
+  ProductModel product = ProductModel();
 
   @override
   void dispose() {
@@ -72,12 +72,11 @@ class _EditProductFormState extends State<EditProductForm> {
       newProduct = false;
       final productDetails =
           Provider.of<ProductDetails>(context, listen: false);
-      productDetails.initialSelectedImages = widget.product.images!
+      productDetails.initialSelectedImages = widget.product.images
           .map((e) => CustomImage(imgType: ImageType.network, path: e))
           .toList();
-      productDetails.initialProductType =
-          product.productType ?? ProductType.other;
-      productDetails.initSearchTags = product.searchTags ?? [];
+      productDetails.initialProductType = product.productType;
+      productDetails.initSearchTags = product.searchTags;
     }
   }
 
@@ -104,13 +103,13 @@ class _EditProductFormState extends State<EditProductForm> {
       ],
     );
     if (newProduct == false) {
-      titleFieldController.text = product.title ?? '';
-      variantFieldController.text = product.variant ?? '';
+      titleFieldController.text = product.title;
+      variantFieldController.text = product.variant;
       discountPriceFieldController.text = product.discountPrice.toString();
       originalPriceFieldController.text = product.originalPrice.toString();
-      highlightsFieldController.text = product.highlights ?? '';
-      desciptionFieldController.text = product.description ?? '';
-      sellerFieldController.text = product.seller ?? '';
+      highlightsFieldController.text = product.highlights;
+      desciptionFieldController.text = product.description;
+      sellerFieldController.text = product.seller;
     }
     return column;
   }
@@ -563,29 +562,29 @@ class _EditProductFormState extends State<EditProductForm> {
     String productId = '';
     String snackbarMessage = '';
     try {
-      product.productType = productDetails.productType;
-      product.searchTags = productDetails.searchTags;
-      final productUploadFuture = newProduct
-          ? ProductDatabaseHelper().addUsersProduct(product)
-          : ProductDatabaseHelper().updateUsersProduct(product);
-      productUploadFuture.then((value) {
-        productId = value;
-      });
-      await showDialog(
-        context: context,
-        builder: (context) {
-          return FutureProgressDialog(
-            productUploadFuture,
-            message:
-                Text(newProduct ? "Uploading Product" : "Updating Product"),
-          );
-        },
-      );
-      if (productId != null) {
-        snackbarMessage = "Product Info updated successfully";
-      } else {
-        throw "Couldn't update product info due to some unknown issue";
-      }
+      // product.productType = productDetails.productType;
+      // product.searchTags = productDetails.searchTags;
+      // final productUploadFuture = newProduct
+      //     ? ProductDatabaseHelper().addUsersProduct(product)
+      //     : ProductDatabaseHelper().updateUsersProduct(product);
+      // productUploadFuture.then((value) {
+      //   productId = value;
+      // });
+      // await showDialog(
+      //   context: context,
+      //   builder: (context) {
+      //     return FutureProgressDialog(
+      //       productUploadFuture,
+      //       message:
+      //           Text(newProduct ? "Uploading Product" : "Updating Product"),
+      //     );
+      //   },
+      // );
+      // if (productId != null) {
+      //   snackbarMessage = "Product Info updated successfully";
+      // } else {
+      //   throw "Couldn't update product info due to some unknown issue";
+      // }
     } on FirebaseException catch (e) {
       Logger().w("Firebase Exception: $e");
       snackbarMessage = "Something went wrong";

@@ -173,19 +173,46 @@ class ProductModel {
   }
 
   String get id => _productId ?? "";
+  set id(String value) => _productId = value;
+
   List<String> get images => _images ?? [];
+  set images(List<String> value) => _images = value;
+
   String get title => _title ?? "Untitled";
+  set title(String value) => _title = value;
+
   String get variant => _variant ?? "Unknown";
+  set variant(String value) => _variant = value;
+
   num get discountPrice => _discountPrice ?? 0;
+  set discountPrice(num value) => _discountPrice = value;
+
   num get originalPrice => _originalPrice ?? 0;
+  set originalPrice(num value) => _originalPrice = value;
+
   num get rating => _rating ?? 0;
+  set rating(num value) => _rating = value;
+
   String get highlights => _highlights ?? "";
+  set highlights(String value) => _highlights = value;
+
   String get description => _description ?? "";
+  set description(String value) => _description = value;
+
   String get seller => _seller ?? "Unknown seller";
+  set seller(String value) => _seller = value;
+
   bool get favourite => _favourite;
+  set favourite(bool value) => _favourite = value;
+
   String get owner => _owner ?? "Unknown";
+  set owner(String value) => _owner = value;
+
   ProductType get productType => _productType ?? ProductType.other;
+  set productType(ProductType value) => _productType = value;
+
   List<String> get searchTags => _searchTags ?? [];
+  set searchTags(List<String> value) => _searchTags = value;
 
   int calculatePercentageDiscount() {
     num originalP = originalPrice;

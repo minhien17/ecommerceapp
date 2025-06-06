@@ -116,7 +116,7 @@ class _BodyState extends State<Body> {
     final completer = Completer<List<ProductModel>>();
 
     ApiUtil.getInstance()!.get(
-      url: ApiEndpoint.search,
+      url: ApiEndpoint.product,
       params: {
         "query": query,
         "category": EnumToString.convertToString(widget.productType)
