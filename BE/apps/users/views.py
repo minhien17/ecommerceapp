@@ -38,21 +38,20 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 @api_view(['POST'])
 def login(request):
-    username = request.data.get('username')
+    email = request.data.get('email')
     password = request.data.get('password')
     try:
-        user = User.objects.get(username=username, password=password)
+        user = User.objects.get(email=email, password=password)
         data = UserSerializer(user).data
         return api_response(data=data, message="Login success", code=200, status=200)
     except User.DoesNotExist:
         return api_response(
             data=None,
-            message="Wrong password or username",
+            message="Wrong password or email",
             code=401,
             status=401,
             errMessage="INVALID_CREDENTIALS"
         )
-
 @api_view(['GET'])
 def get_users(request):
     users = User.objects.all()
@@ -62,9 +61,9 @@ def get_users(request):
 @api_view(['POST'])
 def signup(request):
     try:
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        email = request.data.get('email', '')  # Thêm dòng này
+        username = request.data.get('username', '')
         display_picture = request.data.get('display_picture', '')
         favourite_products = request.data.get('favourite_products', '')
         phone = request.data.get('phone', '')
@@ -72,8 +71,8 @@ def signup(request):
         if not user_id:
             user_id = f"u{uuid.uuid4().hex[:6]}"
 
-        if User.objects.filter(username=username).exists():
-            return api_response(data={"is_success": False}, message="Username already exists", code=400, status=400)
+        if User.objects.filter(email=email).exists():
+            return api_response(data={"is_success": False}, message="Email already exists", code=400, status=400)
 
         user = User.objects.create(
             user_id=user_id,
