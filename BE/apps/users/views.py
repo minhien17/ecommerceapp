@@ -103,18 +103,7 @@ def signup(request):
     except Exception as e:
         return api_response(data=None, message="Signup failed", code=500, status=500, errMessage=str(e))
 
-# Giỏ hàng: TODO - cần model thực tế, tạm thời giữ nguyên fake
-FAKE_CART = [
-    {
-        "product_id": "1",
-        "quantity": 2,
-        "product": {
-            "images": "https://example.com/image1.jpg",
-            "discount_price": 9.0,
-            "title": "Áo thun nam"
-        }
-    }
-]
+
 
 @api_view(['GET'])
 def cart(request):
