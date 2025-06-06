@@ -25,10 +25,6 @@ class UserSerializer(serializers.ModelSerializer):
             return [item.strip() for item in obj.favourite_products.split(',') if item.strip()]
         return []
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']  # Thêm 'email'
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
