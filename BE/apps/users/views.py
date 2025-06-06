@@ -1,6 +1,9 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.contrib.auth.models import User
+from rest_framework import serializers
+from django.contrib.auth import authenticate
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
     return Response({
@@ -9,93 +12,112 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
         "data": data,
         "status": status,
         "errMessage": errMessage
-    }, status=status , content_type='application/json; charset=utf-8')
+    }, status=status)
 
-# API login
+# User Serializer
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
+
+# API login (thực tế)
 @api_view(['POST'])
 def login(request):
-    try:
-        username = request.data.get('email')
-        password = request.data.get('password')
-
-        if username == "hienlinh2624@gmail.com" and password == "123456":
-            return api_response( data=
-                {
-                'userid': 'sfDVgu50oyQt4iHk9pK0RZ0ikwh2',
-                'username': 'Minh Hiển',
-                'email': 'hienlinh2624@gmail.com',
-                'image': None # nếu có ảnh thì truyền, ko thì truyền None
-                },
-            )
-
-        return Response(
-            {'status': '401', 'message': 'Wrong password or username'},
-            status=status.HTTP_401_UNAUTHORIZED
+    username = request.data.get('email')
+    password = request.data.get('password')
+    user = authenticate(username=username, password=password)
+    if user is not None:
+        serializer = UserSerializer(user)
+        return api_response(
+            data=serializer.data,
+            message="Login success",
+            code=200,
+            status=200
         )
+    return api_response(
+        data=None,
+        message="Wrong password or username",
+        code=401,
+        status=401,
+        errMessage="INVALID_CREDENTIALS"
+    )
 
-    except Exception as e:
-        return Response(
-            {'status': '500', 'message': f'Server Error: {str(e)}'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
+# Lấy danh sách user từ DB
 @api_view(['GET'])
 def get_users(request):
-    # Dữ liệu giả lập, có thể thay bằng database thực tế
-    users = [
-        {'userid': 1, 'username': 'Hiển', 'email': 'hienlinh@example.com', 'image': 'https://example.com/avatar1.png'},
-        {'userid': 2, 'username': 'Nam', 'email': 'nam@example.com', 'image': 'https://example.com/avatar2.png'},
-        {'userid': 3, 'username': 'Mai', 'email': 'mai@example.com', 'image': 'https://example.com/avatar3.png'},
-    ]
-    
-    return Response(users, status=status.HTTP_200_OK)
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-#sign up
+# Đăng ký tài khoản (thực tế)
 @api_view(['POST'])
 def signup(request):
     username = request.data.get('username')
     email = request.data.get('email')
     password = request.data.get('password')
-    # TODO: Thêm kiểm tra và lưu user thực tế
-    return api_response(data={"is_success": "true"}, message="Signup success", code=201, status=201)
+    if User.objects.filter(username=username).exists() or User.objects.filter(email=email).exists():
+        return api_response(data={"is_success": False}, message="Username or email already exists", code=400, status=400)
+    user = User.objects.create_user(username=username, email=email, password=password)
+    serializer = UserSerializer(user)
+    return api_response(data={"is_success": True, "user": serializer.data}, message="Signup success", code=201, status=201)
 
-#cart
+# Giỏ hàng: TODO - cần model thực tế, tạm thời giữ nguyên fake
+FAKE_CART = [
+    {
+        "product_id": "1",
+        "quantity": 2,
+        "product": {
+            "images": "https://example.com/image1.jpg",
+            "discount_price": 9.0,
+            "title": "Áo thun nam"
+        }
+    }
+]
+
 @api_view(['GET', 'POST'])
 def cart(request):
     if request.method == 'GET':
-        # ... code lấy giỏ hàng ...
-        cart = [
-            {
-                "product_id": "1",
-                "item_count": 2,
-            }
-        ]
-        return api_response(data=cart, message="Get cart success", code=200, status=200)
+        return api_response(data=FAKE_CART, message="Get cart success", code=200, status=200)
     elif request.method == 'POST':
-        # ... code thêm sản phẩm vào giỏ ...
+        product_id = request.data.get('product_id')
+        for item in FAKE_CART:
+            if item['product_id'] == product_id:
+                return api_response(data={"success": False}, message="Product already in cart", code=400, status=400)
+        FAKE_CART.append({
+            "product_id": product_id,
+            "quantity": request.data.get('quantity', 1),
+            "product": {
+                "images": request.data.get('images', ''),
+                "discount_price": request.data.get('discount_price', 0),
+                "title": request.data.get('title', '')
+            }
+        })
         return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
 
-#xoa sp
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
-    # TODO: Xóa sản phẩm khỏi cart thực tế
-    cart = []
-    return api_response(data=cart, message="Remove from cart success", code=200, status=200)
+    found = False
+    for item in FAKE_CART:
+        if item['product_id'] == productid:
+            FAKE_CART.remove(item)
+            found = True
+            break
+    if not found:
+        return api_response(data=FAKE_CART, message="Product not found in cart", code=404, status=404)
+    return api_response(data=FAKE_CART, message="Remove from cart success", code=200, status=200)
 
-#cap nhat thong tin ca nhan
-@api_view(['POST'])
+# Cập nhật thông tin cá nhân (thực tế)
+@api_view(['PATCH'])
 def update_user(request):
-    
-    user = {
-        "id": "user_id",
-        "picture": request.data.get("picture"),
-        "name": request.data.get("name"),
-        "number": request.data.get("number"),
-        "password": request.data.get("password")
-    }
-    return api_response(
-        data={"success": True, "user": user},
-        message="Update user success",
-        code=200,
-        status=200
-    )
+    user = request.user
+    if not user.is_authenticated:
+        return api_response(data={"success": False}, message="Authentication required", code=401, status=401)
+    username = request.data.get("username")
+    email = request.data.get("email")
+    if username:
+        user.username = username
+    if email:
+        user.email = email
+    user.save()
+    serializer = UserSerializer(user)
+    return api_response(data={"success": True, "user": serializer.data}, message="Update user success", code=200, status=200)
