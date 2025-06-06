@@ -116,11 +116,11 @@ class _BodyState extends State<Body> {
   Widget buildProductsCard(String productId) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: FutureBuilder<Product>(
-        future: ProductDatabaseHelper().getProductWithID(productId),
+      child: FutureBuilder<ProductModel>(
+        // future: ProductDatabaseHelper().getProductWithID(productId),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            final product = snapshot.data as Product;
+            final product = snapshot.data as ProductModel;
             return buildProductDismissible(product);
           } else if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -140,7 +140,7 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Widget buildProductDismissible(Product product) {
+  Widget buildProductDismissible(ProductModel product) {
     return Dismissible(
       key: Key(product.id),
       direction: DismissDirection.horizontal,
@@ -169,7 +169,7 @@ class _BodyState extends State<Body> {
           final confirmation = await showConfirmationDialog(
               context, "Are you sure to Delete Product?");
           if (confirmation) {
-            for (int i = 0; i < product.images!.length; i++) {
+            for (int i = 0; i < product.images.length; i++) {
               String path =
                   ProductDatabaseHelper().getPathForProductImage(product.id, i);
               final deletionFuture =
@@ -180,7 +180,7 @@ class _BodyState extends State<Body> {
                   return FutureProgressDialog(
                     deletionFuture,
                     message: Text(
-                        "Deleting Product Images ${i + 1}/${product.images!.length}"),
+                        "Deleting Product Images ${i + 1}/${product.images.length}"),
                   );
                 },
               );

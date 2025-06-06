@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'edit_product_form.dart';
 
 class Body extends StatelessWidget {
-  final Product productToEdit;
+  final ProductModel productToEdit;
 
   const Body({Key? key, required this.productToEdit}) : super(key: key);
   @override

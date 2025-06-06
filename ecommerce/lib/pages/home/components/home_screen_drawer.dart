@@ -367,7 +367,7 @@ class _HomeScreenDrawerState extends State<HomeScreenDrawer> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => EditProductScreen(
-                          productToEdit: Product(''),
+                          productToEdit: ProductModel(),
                         )));
           },
         ),

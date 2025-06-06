@@ -22,7 +22,7 @@ class ApiEndpoint {
   // end point product
   static String product = "$DOMAIN/products";
 
-  static String search = "$DOMAIN/search";
+  // static String search = "$DOMAIN/search";
 
   static String review = "$DOMAIN/products/review";
 }
