@@ -98,21 +98,19 @@ def signup(request):
 
 @api_view(['GET'])
 def cart(request):
-    auth_header = request.headers.get("authorization")
+    auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
-
-    parts = auth_header.split(" ")
-    user_id = parts[1]
-    if not user_id:
-        return api_response(data=None, message="Missing user_id", code=400, status=400)
-    try:
-        cart = Cart.objects.get(user__user_id=user_id)
-        items = CartItem.objects.filter(cart=cart)
-        serializer = CartItemSerializer(items, many=True)
-        return api_response(data=serializer.data, message="Get cart success", code=200, status=200)
-    except Cart.DoesNotExist:
-        return api_response(data=[], message="Cart is empty", code=200, status=200)
+        return Response([], status=401)
+    user_id = auth_header.split(" ")[1]
+    items = CartItem.objects.filter(cart_id=user_id)
+    data = [
+        {
+            "product_id": item.product_id,
+            "item_count": item.item_count
+        }
+        for item in items
+    ]
+    return Response(data)
 
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
