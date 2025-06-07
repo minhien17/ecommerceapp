@@ -1,7 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import User, Cart, CartItem, Product
+from .models import User, Cart, CartItem
+from apps.products.models import Product
 import uuid
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
@@ -188,3 +189,57 @@ def change_password(request):
         return api_response(data={"success": False}, message="User not found", code=404, status=404)
     except Exception as e:
         return api_response(data={"success": False}, message="An error occurred", code=500, status=500, errMessage=str(e))
+    
+
+#get, post product u like
+@api_view(['GET', 'POST'])
+def favourite(request, productid=None):
+    # Lấy user_id từ header
+    token = request.headers.get('token') or request.headers.get('Authorization')
+    if not token:
+        return Response([], status=401)
+    if token.lower().startswith("bearer "):
+        user_id = token.split(" ")[1]
+    else:
+        user_id = token
+    try:
+        user = User.objects.get(user_id=user_id)
+    except User.DoesNotExist:
+        return Response([], status=404)
+
+    # GET: trả về list product yêu thích
+    if request.method == 'GET':
+        fav_ids = [pid.strip() for pid in (user.favourite_products or '').split(',') if pid.strip()]
+        products = Product.objects.filter(product_id__in=fav_ids)
+        data = []
+        for product in products:
+            images = product.image.split(',') if product.image else []
+            data.append({
+                "product_id": product.product_id or None,
+                "description": product.description or None,
+                "discount_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+                "highlights": product.highlight or None,
+                "images": images,
+                "original_price": float(product.original_price) if product.original_price and product.original_price.replace('.', '', 1).isdigit() else None,
+                "owner": getattr(product, "owner", None),
+                "product_type": product.product_type or None,
+                "rating": float(product.rating) if product.rating is not None else None,
+                "search_tags": product.search_tags.split(',') if product.search_tags else [],
+                "seller": getattr(product, "seller", None),
+                "title": product.title or None,
+                "variant": product.variant or None
+            })
+        return Response(data)
+
+    # POST: thêm/xóa product_id khỏi danh sách yêu thích
+    if request.method == 'POST':
+        if not productid:
+            return Response({"status": False, "message": "Missing product_id"}, status=400)
+        fav_ids = [pid.strip() for pid in (user.favourite_products or '').split(',') if pid.strip()]
+        if productid in fav_ids:
+            fav_ids.remove(productid)
+        else:
+            fav_ids.append(productid)
+        user.favourite_products = ','.join(fav_ids)
+        user.save()
+        return Response({"status": True})
