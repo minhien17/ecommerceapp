@@ -97,7 +97,7 @@ class _BodyState extends State<Body> {
                 SizedBox(height: getProportionateScreenHeight(15)),
                 HomeHeader(
                   onSearchSubmitted: (value) async {
-                    final query = value.toString();
+                    final query = value.toString().trim();
                     if (query.length <= 0) return;
                     List<ProductModel> searchedProducts = [];
                     try {
@@ -208,10 +208,10 @@ class _BodyState extends State<Body> {
     final completer = Completer<List<ProductModel>>();
 
     ApiUtil.getInstance()!.get(
-      url: ApiEndpoint.search,
+      url: ApiEndpoint.product,
       params: {"query": query},
       onSuccess: (response) {
-        List<ProductModel> products = (response.data as List)
+        List<ProductModel> products = (response.data['data'] as List)
             .map((json) => ProductModel.fromJson(json))
             .toList();
         completer.complete(products);

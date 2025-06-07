@@ -14,9 +14,17 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
     }, status=status)
 
 class UserSerializer(serializers.ModelSerializer):
+    favourite_products = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']  # Thêm 'email'
+        fields = ['user_id', 'username', 'email', 'display_picture', 'favourite_products', 'phone']
+
+    def get_favourite_products(self, obj):
+        if obj.favourite_products:
+            return [item.strip() for item in obj.favourite_products.split(',') if item.strip()]
+        return []
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
@@ -36,23 +44,23 @@ class CartItemSerializer(serializers.ModelSerializer):
             "rating": obj.product.rating,
         }
 
+
 @api_view(['POST'])
 def login(request):
-    username = request.data.get('username')
+    email = request.data.get('email')
     password = request.data.get('password')
     try:
-        user = User.objects.get(username=username, password=password)
+        user = User.objects.get(email=email, password=password)
         data = UserSerializer(user).data
         return api_response(data=data, message="Login success", code=200, status=200)
     except User.DoesNotExist:
         return api_response(
             data=None,
-            message="Wrong password or username",
+            message="Wrong password or email",
             code=401,
             status=401,
             errMessage="INVALID_CREDENTIALS"
         )
-
 @api_view(['GET'])
 def get_users(request):
     users = User.objects.all()
@@ -62,9 +70,9 @@ def get_users(request):
 @api_view(['POST'])
 def signup(request):
     try:
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        email = request.data.get('email', '')  # Thêm dòng này
+        username = request.data.get('username', '')
         display_picture = request.data.get('display_picture', '')
         favourite_products = request.data.get('favourite_products', '')
         phone = request.data.get('phone', '')
@@ -72,8 +80,8 @@ def signup(request):
         if not user_id:
             user_id = f"u{uuid.uuid4().hex[:6]}"
 
-        if User.objects.filter(username=username).exists():
-            return api_response(data={"is_success": False}, message="Username already exists", code=400, status=400)
+        if User.objects.filter(email=email).exists():
+            return api_response(data={"is_success": False}, message="Email already exists", code=400, status=400)
 
         user = User.objects.create(
             user_id=user_id,
@@ -90,7 +98,12 @@ def signup(request):
 
 @api_view(['GET'])
 def cart(request):
-    user_id = request.query_params.get('user_id')
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
     if not user_id:
         return api_response(data=None, message="Missing user_id", code=400, status=400)
     try:
@@ -114,9 +127,15 @@ def remove_from_cart(request, productid):
     except (Cart.DoesNotExist, CartItem.DoesNotExist):
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
 
-@api_view(['PATCH'])
+@api_view(['POSt'])
 def update_user(request):
-    user_id = request.data.get("user_id")
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
+    
     if not user_id:
         return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
     try:
@@ -141,3 +160,37 @@ def update_user(request):
         return api_response(data={"success": True, "user": serializer.data}, message="Update user success", code=200, status=200)
     except User.DoesNotExist:
         return api_response(data={"success": False}, message="User not found", code=404, status=404)
+
+@api_view(['POST'])
+def change_password(request):
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
+
+    parts = auth_header.split(" ")
+    user_id = parts[1]
+
+    if not user_id:
+        return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
+
+    try:
+        user = User.objects.get(user_id=user_id)
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return api_response(data={"success": False}, message="Missing password fields", code=400, status=400)
+
+        # Kiểm tra mật khẩu hiện tại
+        if user.password != current_password:
+            return api_response(data={"success": False}, message="Current password is incorrect", code=400, status=400)
+
+        # Cập nhật mật khẩu mới
+        user.password = new_password
+        user.save()
+
+        return api_response(data={"success": True}, message="Password updated successfully", code=200, status=200)
+    except User.DoesNotExist:
+        return api_response(data={"success": False}, message="User not found", code=404, status=404)
+    except Exception as e:
+        return api_response(data={"success": False}, message="An error occurred", code=500, status=500, errMessage=str(e))

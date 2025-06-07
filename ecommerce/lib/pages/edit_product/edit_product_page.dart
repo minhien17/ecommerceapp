@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'provider_models/product_detail_model.dart';
 
 class EditProductScreen extends StatelessWidget {
-  final Product productToEdit;
+  final ProductModel productToEdit;
 
   EditProductScreen({Key? key, required this.productToEdit}) : super(key: key);
   @override

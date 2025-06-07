@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ecommerce/components/custom_suffix_icon.dart';
 import 'package:ecommerce/components/default_button.dart';
 import 'package:ecommerce/constants.dart';
+import 'package:ecommerce/pages/sign_in/sign_in.dart';
 import 'package:ecommerce/pages/sign_up/sign_up_page.dart';
 import 'package:ecommerce/services/authentication/authentification_service.dart';
 import 'package:ecommerce/size_config.dart';
@@ -147,11 +148,14 @@ class _SignUpFormState extends State<SignUpForm> {
       },
       onSuccess: (response) async {
         final data = response.data;
-        if (data['success'] == true) {
+        if (data['data']['is_success'] == true) {
           toastInfo(msg: "Sign up successful!");
-          Navigator.pushNamed(context,
-              '/completeProfile'); // Điều hướng đến màn hình hoàn thiện hồ sơ
-          completer.complete();
+
+          // Điều hướng đến màn hình Login
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => SignInScreen()),
+          );
         } else {
           toastInfo(msg: data['message'] ?? "Sign up failed!");
           completer.completeError("Sign up failed!");

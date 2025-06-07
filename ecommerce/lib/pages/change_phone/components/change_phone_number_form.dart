@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
 import '../../../components/default_button.dart';
 import '../../../services/database/user_database_helper.dart';
+import '../../../shared_preference.dart';
 import '../../../size_config.dart';
 
 class ChangePhoneNumberForm extends StatefulWidget {
@@ -55,6 +60,15 @@ class _ChangePhoneNumberFormState extends State<ChangePhoneNumberForm> {
                   );
                 },
               );
+              updateFuture.then((_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Phone number updated")),
+                );
+              }).catchError((error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Failed to update Phone number")),
+                );
+              });
             },
           ),
         ],
@@ -68,30 +82,23 @@ class _ChangePhoneNumberFormState extends State<ChangePhoneNumberForm> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      bool status = false;
-      String snackbarMessage = '';
-      try {
-        status = await UserDatabaseHelper()
-            .updatePhoneForCurrentUser(newPhoneNumberController.text);
-        if (status == true) {
-          snackbarMessage = "Phone updated successfully";
-        } else {
-          throw "Coulnd't update phone due to unknown reason";
-        }
-      } on FirebaseException catch (e) {
-        Logger().w("Firebase Exception: $e");
-        snackbarMessage = "Something went wrong";
-      } catch (e) {
-        Logger().w("Unknown Exception: $e");
-        snackbarMessage = "Something went wrong";
-      } finally {
-        Logger().i(snackbarMessage);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(snackbarMessage),
-          ),
-        );
-      }
+      final newPhoneNumber = newPhoneNumberController.text.trim();
+      final completer = Completer<void>();
+
+      ApiUtil.getInstance()!.post(
+        url: ApiEndpoint.updateUser, // endpoint cập nhật user
+        body: {"phone": newPhoneNumber}, // truyền vào body
+        onSuccess: (response) async {
+          await SharedPreferenceUtil.savePhone(
+              newPhoneNumber); // Lưu phone mới vào SharedPreferences
+          completer.complete();
+        },
+        onError: (error) {
+          completer.completeError(error);
+        },
+      );
+
+      return completer.future;
     }
   }
 
@@ -118,17 +125,16 @@ class _ChangePhoneNumberFormState extends State<ChangePhoneNumberForm> {
   }
 
   Widget buildCurrentPhoneNumberField() {
-    return StreamBuilder<DocumentSnapshot>(
-      stream: UserDatabaseHelper().currentUserDataStream,
+    return FutureBuilder<String>(
+      future: SharedPreferenceUtil.getPhone(), // Lấy phone từ SharedPreferences
       builder: (context, snapshot) {
+        String currentPhone = '';
         if (snapshot.hasError) {
           final error = snapshot.error;
           Logger().w(error.toString());
         }
-        String currentPhone = '';
         if (snapshot.hasData && snapshot.data != null) {
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          currentPhone = data[UserDatabaseHelper.PHONE_KEY] as String? ?? '';
+          currentPhone = snapshot.data!;
         }
         final textField = TextFormField(
           controller: currentPhoneNumberController,
@@ -142,7 +148,6 @@ class _ChangePhoneNumberFormState extends State<ChangePhoneNumberForm> {
         );
         if (currentPhone != "") {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            // gans ngoai build
             currentPhoneNumberController.text = currentPhone;
           });
         }

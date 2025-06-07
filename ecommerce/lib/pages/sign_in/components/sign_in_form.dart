@@ -131,8 +131,7 @@ class _SignInFormState extends State<SignInForm> {
       AppLoading.show(context);
 
       var body = {
-        // "email": emailFieldController.text.trim(),
-        "username": "Minh_Hien",
+        "email": emailFieldController.text.trim(),
         "password": passwordFieldController.text.trim()
       };
 
