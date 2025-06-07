@@ -290,3 +290,4 @@ def favourite(request, productid=None):
         user.favourite_products = ','.join(fav_ids)
         user.save()
         return Response({"status": True})
+    
