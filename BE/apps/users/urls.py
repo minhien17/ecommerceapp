@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import add_to_cart, increase_cart_item, decrease_cart_item
+from .views import add_to_cart, increase_cart_item, decrease_cart_item,address_api
 from .views import login, get_users, signup, cart, remove_from_cart, update_user, change_password,favourite
 
 urlpatterns = [
@@ -17,4 +17,6 @@ urlpatterns = [
     
     path('favourite', favourite, name='favourite_get'),  # GET /api/users/favourite
     path('favourite/<str:productid>', favourite, name='favourite_post'),  # POST /api/users/favourite/<productid>
+    
+    path('address', address_api, name='address_api'),
 ]

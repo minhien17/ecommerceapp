@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import User, Cart, CartItem
+from .models import User, Cart, CartItem, Address
 from apps.products.models import Product
 import uuid
 
@@ -45,6 +45,10 @@ class CartItemSerializer(serializers.ModelSerializer):
             "rating": obj.product.rating,
         }
 
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = '__all__'
 
 @api_view(['POST'])
 def login(request):
@@ -291,3 +295,54 @@ def favourite(request, productid=None):
         user.save()
         return Response({"status": True})
     
+# api address
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+def address_api(request):
+    # Lấy user_id từ Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+
+    # GET: Lấy danh sách địa chỉ của user
+    if request.method == 'GET':
+        addresses = Address.objects.filter(user_id=user_id)
+        serializer = AddressSerializer(addresses, many=True)
+        return api_response(data=serializer.data, message="Get addresses success", code=200, status=200)
+
+    # POST: Thêm địa chỉ mới
+    if request.method == 'POST':
+        data = request.data.copy()
+        data['user_id'] = user_id
+        serializer = AddressSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return api_response(data=serializer.data, message="Add address success", code=201, status=201)
+        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+
+    # PUT: Sửa địa chỉ (cần truyền address_id trong body)
+    if request.method == 'PUT':
+        address_id = request.data.get('address_id')
+        if not address_id:
+            return api_response(data=None, message="Missing address_id", code=400, status=400)
+        try:
+            address = Address.objects.get(address_id=address_id, user_id=user_id)
+        except Address.DoesNotExist:
+            return api_response(data=None, message="Address not found", code=404, status=404)
+        serializer = AddressSerializer(address, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return api_response(data=serializer.data, message="Update address success", code=200, status=200)
+        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+
+    # DELETE: Xóa địa chỉ (cần truyền address_id trong body)
+    if request.method == 'DELETE':
+        address_id = request.data.get('address_id')
+        if not address_id:
+            return api_response(data=None, message="Missing address_id", code=400, status=400)
+        try:
+            address = Address.objects.get(address_id=address_id, user_id=user_id)
+            address.delete()
+            return api_response(data=None, message="Delete address success", code=200, status=200)
+        except Address.DoesNotExist:
+            return api_response(data=None, message="Address not found", code=404, status=404)

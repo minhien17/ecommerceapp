@@ -44,3 +44,21 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.cart_id} - {self.product_id}"
+    
+class Address(models.Model):
+    address_id = models.AutoField(primary_key=True)
+    address_line_1 = models.CharField(max_length=255)
+    address_line_2 = models.CharField(max_length=255, blank=True, null=True)
+    state = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    district = models.CharField(max_length=255)
+    describe = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=255)
+    pincode = models.CharField(max_length=255)
+    receiver = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
+    user_id = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'addresses'
+        managed = False 
