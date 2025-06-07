@@ -24,15 +24,23 @@ class Product(models.Model):
         return self.product_id
 
 class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, db_column='user_id')
+    user_id = models.CharField(max_length=255, primary_key=True)
+
+    class Meta:
+        db_table = 'cart'
+        managed = False
 
     def __str__(self):
-        return self.user.user_id
+        return self.user_id
 
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, db_column='cart_id', related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='product_id')
+    user_id = models.CharField(max_length=255)  # Không dùng ForeignKey nữa!
+    product_id = models.CharField(max_length=255)
     item_count = models.IntegerField(default=1)
 
+    class Meta:
+        db_table = 'cartitems'
+        managed = False
+
     def __str__(self):
-        return f"{self.cart.user.user_id} - {self.product.product_id}"
+        return f"{self.user_id} - {self.product_id}"

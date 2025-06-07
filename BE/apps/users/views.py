@@ -127,39 +127,35 @@ def remove_from_cart(request, productid):
     except (Cart.DoesNotExist, CartItem.DoesNotExist):
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
 
-@api_view(['POSt'])
+@api_view(['POST'])
 def update_user(request):
-    auth_header = request.headers.get("authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return api_response(data={"success": False}, message="Missing or invalid token", code=401, status=401)
-
-    parts = auth_header.split(" ")
-    user_id = parts[1]
-    
+    user_id = request.data.get("user_id")
     if not user_id:
         return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
+
     try:
         user = User.objects.get(user_id=user_id)
-        username = request.data.get("username")
-        email = request.data.get("email")  # Thêm dòng này
-        display_picture = request.data.get("display_picture")
-        favourite_products = request.data.get("favourite_products")
-        phone = request.data.get("phone")
-        if username:
-            user.username = username
-        if email:  # Thêm dòng này
-            user.email = email
-        if display_picture:
-            user.display_picture = display_picture
-        if favourite_products:
-            user.favourite_products = favourite_products
-        if phone:
-            user.phone = phone
+        name = request.data.get("name")
+        picture = request.data.get("picture")
+        number = request.data.get("number")
+        password = request.data.get("password")
+
+        if name:
+            user.username = name
+        if picture:
+            user.display_picture = picture
+        if number:
+            user.phone = number
+        if password:
+            user.password = password
+
         user.save()
         serializer = UserSerializer(user)
         return api_response(data={"success": True, "user": serializer.data}, message="Update user success", code=200, status=200)
     except User.DoesNotExist:
         return api_response(data={"success": False}, message="User not found", code=404, status=404)
+    except Exception as e:
+        return api_response(data={"success": False}, message="An error occurred", code=500, status=500, errMessage=str(e))
 
 @api_view(['POST'])
 def change_password(request):
