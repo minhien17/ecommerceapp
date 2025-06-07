@@ -114,15 +114,14 @@ def cart(request):
 
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
-    user_id = request.query_params.get('user_id')
-    if not user_id:
-        return api_response(data=None, message="Missing user_id", code=400, status=400)
+    cart_id = request.query_params.get('user_id')  # thực chất là cart_id
+    if not cart_id:
+        return api_response(data=None, message="Missing cart_id", code=400, status=400)
     try:
-        cart = Cart.objects.get(user__user_id=user_id)
-        cart_item = CartItem.objects.get(cart=cart, product__product_id=productid)
+        cart_item = CartItem.objects.get(cart_id=cart_id, product_id=productid)
         cart_item.delete()
-        return api_response(data={"user_id": user_id, "product_id": productid}, message="Remove from cart success", code=200, status=200)
-    except (Cart.DoesNotExist, CartItem.DoesNotExist):
+        return api_response(data={"cart_id": cart_id, "product_id": productid}, message="Remove from cart success", code=200, status=200)
+    except CartItem.DoesNotExist:
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
 
 @api_view(['POST'])
