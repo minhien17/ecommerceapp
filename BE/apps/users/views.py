@@ -112,6 +112,54 @@ def cart(request):
     ]
     return Response(data)
 
+@api_view(['POST'])
+def add_to_cart(request, productid):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+    try:
+        cart_item, created = CartItem.objects.get_or_create(cart_id=user_id, product_id=productid)
+        if not created:
+            cart_item.item_count += 1
+        else:
+            cart_item.item_count = 1
+        cart_item.save()
+        return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
+    except Exception as e:
+        return api_response(data=None, message="Add to cart failed", code=500, status=500, errMessage=str(e))
+
+@api_view(['POST'])
+def increase_cart_item(request, productid):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+    try:
+        cart_item = CartItem.objects.get(cart_id=user_id, product_id=productid)
+        cart_item.item_count += 1
+        cart_item.save()
+        return api_response(data={"success": True}, message="Increased item count", code=200, status=200)
+    except CartItem.DoesNotExist:
+        return api_response(data=None, message="Product not found in cart", code=404, status=404)
+
+@api_view(['POST'])
+def decrease_cart_item(request, productid):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+    try:
+        cart_item = CartItem.objects.get(cart_id=user_id, product_id=productid)
+        if cart_item.item_count > 1:
+            cart_item.item_count -= 1
+            cart_item.save()
+            return api_response(data={"success": True}, message="Decreased item count", code=200, status=200)
+        else:
+            return api_response(data={"success": False}, message="Item count is already 1", code=200, status=200)
+    except CartItem.DoesNotExist:
+        return api_response(data=None, message="Product not found in cart", code=404, status=404)
+
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
     cart_id = request.query_params.get('user_id')  # thực chất là cart_id
