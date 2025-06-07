@@ -19,7 +19,7 @@ class Product(models.Model):
     product_id = models.CharField(max_length=255, primary_key=True)
     description = models.CharField(max_length=255, blank=True, null=True)
     highlight = models.CharField(max_length=255, blank=True, null=True)
-    image = models.CharField(max_length=255, blank=True, null=True)
+    image = models.TextField(blank=True, null=True)
     original_price = models.CharField(max_length=255, blank=True, null=True)
     product_type = models.CharField(max_length=255, blank=True, null=True)
     rating = models.IntegerField(default=0)
