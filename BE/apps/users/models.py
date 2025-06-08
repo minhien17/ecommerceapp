@@ -62,3 +62,13 @@ class Address(models.Model):
     class Meta:
         db_table = 'addresses'
         managed = False
+        
+class OrderedProduct(models.Model):
+    ordered_product_id = models.IntegerField(primary_key=True)
+    order_date = models.CharField(max_length=255)
+    product_id = models.CharField(max_length=255)
+    user_id = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'ordered_product'
+        managed = False
