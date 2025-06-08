@@ -46,7 +46,7 @@ class CartItem(models.Model):
         return f"{self.cart_id} - {self.product_id}"
     
 class Address(models.Model):
-    address_id = models.AutoField(primary_key=True)
+    address_id = models.IntegerField(primary_key=True)  # hoặc unique=True nếu không phải PK
     address_line_1 = models.CharField(max_length=255)
     address_line_2 = models.CharField(max_length=255, blank=True, null=True)
     state = models.CharField(max_length=255)
@@ -61,4 +61,4 @@ class Address(models.Model):
 
     class Meta:
         db_table = 'addresses'
-        managed = False 
+        managed = False
