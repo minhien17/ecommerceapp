@@ -167,7 +167,11 @@ def decrease_cart_item(request, productid):
 
 @api_view(['DELETE'])
 def remove_from_cart(request, productid):
-    cart_id = request.query_params.get('user_id')  # thực chất là cart_id
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    cart_id = auth_header.split(" ")[1]
+
     if not cart_id:
         return api_response(data=None, message="Missing cart_id", code=400, status=400)
     try:
@@ -179,7 +183,11 @@ def remove_from_cart(request, productid):
 
 @api_view(['POST'])
 def update_user(request):
-    user_id = request.data.get("user_id")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+    
     if not user_id:
         return api_response(data={"success": False}, message="Missing user_id", code=400, status=400)
 

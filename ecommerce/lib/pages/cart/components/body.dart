@@ -150,7 +150,7 @@ class _BodyState extends State<Body> {
     ApiUtil.getInstance()!.get(
       url: ApiEndpoint.userCart,
       onSuccess: (response) {
-        List<CartItemModel> listCarts = (response.data['data'] as List)
+        List<CartItemModel> listCarts = (response.data as List)
             .map((json) => CartItemModel.fromJson(json))
             .toList();
         completer.complete(listCarts);
@@ -478,7 +478,7 @@ class _BodyState extends State<Body> {
 
   Future<void> arrowUpCallback(String id) async {
     shutBottomSheet();
-    final future = ApiUtil.getInstance()!.get(
+    final future = ApiUtil.getInstance()!.post(
       url: "${ApiEndpoint.userCart}/$id/increase",
       onSuccess: (response) {
         // Do nothing, just return
@@ -495,7 +495,7 @@ class _BodyState extends State<Body> {
       context: context,
       builder: (context) {
         return FutureProgressDialog(
-          future,
+          Future.value(),
           message: const Text("Please wait"),
         );
       },
@@ -504,7 +504,7 @@ class _BodyState extends State<Body> {
 
   Future<void> arrowDownCallback(String id) async {
     shutBottomSheet();
-    final future = ApiUtil.getInstance()!.get(
+    final future = ApiUtil.getInstance()!.post(
       url: "${ApiEndpoint.userCart}/$id/decrease",
       onSuccess: (response) {
         // Do nothing, just return
@@ -521,7 +521,7 @@ class _BodyState extends State<Body> {
       context: context,
       builder: (context) {
         return FutureProgressDialog(
-          future,
+          Future.value(),
           message: const Text("Please wait"),
         );
       },

@@ -112,7 +112,7 @@ class ProductActionsSection extends StatelessWidget {
     final completer = Completer<bool>();
     bool status = false;
     ApiUtil.getInstance()!.post(
-      url: ApiEndpoint.productYouLike,
+      url: "${ApiEndpoint.productYouLike}/${product.id}",
       onSuccess: (response) {
         // Xử lý thành công, trả về true
         status = response.data['status'] ?? false;
@@ -136,7 +136,7 @@ class ProductActionsSection extends StatelessWidget {
     ApiUtil.getInstance()!.get(
       url: ApiEndpoint.productYouLike,
       onSuccess: (response) {
-        List<ProductModel> products = (response.data['data'] as List)
+        List<ProductModel> products = (response.data as List)
             .map((json) => ProductModel.fromJson(json))
             .toList();
         completer.complete(products);
