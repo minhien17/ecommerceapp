@@ -319,14 +319,26 @@ def address_api(request):
         return api_response(data=serializer.data, message="Get addresses success", code=200, status=200)
 
     # POST: Thêm địa chỉ mới
+
     if request.method == 'POST':
-        data = request.data.copy()
-        data['user_id'] = user_id
-        serializer = AddressSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return api_response(data=serializer.data, message="Add address success", code=201, status=201)
-        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+        try:
+            data = request.data.copy()
+            data['user_id'] = user_id
+            if not data.get('address_id'):
+                return api_response(data=None, message="Missing address_id", code=400, status=400)
+            print("DEBUG - Data gửi vào serializer:", data)  # Thêm dòng này để kiểm tra
+            if Address.objects.filter(address_id=data['address_id']).exists():
+                return api_response(data=None, message="address_id already exists", code=400, status=400)
+            serializer = AddressSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return api_response(data=serializer.data, message="Add address success", code=201, status=201)
+            print("Serializer errors:", serializer.errors)
+            return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+        except Exception as e:
+            print("Exception in address POST:", str(e))
+            return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
+
 
     # PUT: Sửa địa chỉ (cần truyền address_id trong body)
     if request.method == 'PUT':
