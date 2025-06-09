@@ -41,6 +41,7 @@ class CartItem(models.Model):
     class Meta:
         db_table = 'cartitems'
         managed = False
+        unique_together = (('cart_id', 'product_id'),)  # tổ hợp khóa chính
 
     def __str__(self):
         return f"{self.cart_id} - {self.product_id}"

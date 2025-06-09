@@ -4,6 +4,7 @@ from django.db.models import Q
 from .models import Product, Review
 from django.db import connection
 from rest_framework import status
+import uuid
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
     return Response({
@@ -97,11 +98,8 @@ def product_list(request):
 @api_view(['POST'])
 def upload_product(request):
     data = request.data
-    product_id = data.get("product_id")
-    if not product_id:
-        return api_response(data=None, message="Missing product_id", code=400, status=400)
-    if Product.objects.filter(product_id=product_id).exists():
-        return api_response(data=None, message="Product ID already exists", code=400, status=400)
+    # Tạo product_id tự động
+    product_id = f"p{uuid.uuid4().hex[:8]}"
     product = Product.objects.create(
         product_id=product_id,
         description=data.get("description"),
@@ -147,6 +145,16 @@ def my_products(request):
             "variant": product.variant or None
         })
     return api_response(data=data, message="Get my products success")
+
+#delete product
+@api_view(['DELETE'])
+def delete_product(request, productid):
+    try:
+        product = Product.objects.get(product_id=productid)
+        product.delete()
+        return Response({"success": True, "message": "Product deleted"})
+    except Product.DoesNotExist:
+        return Response({"success": False, "message": "Product not found"}, status=404)
 
 # Review GET & POST
 from .models import Review
