@@ -357,20 +357,7 @@ def address_api(request):
             print("Exception in address POST:", str(e))
             return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
 
-
-    # PUT: Sửa địa chỉ (cần truyền address_id trong body)
-
-    # DELETE: Xóa địa chỉ (cần truyền address_id trong body)
-    if request.method == 'DELETE':
-        address_id = request.data.get('address_id')
-        if not address_id:
-            return api_response(data=None, message="Missing address_id", code=400, status=400)
-        try:
-            address = Address.objects.get(address_id=address_id, user_id=user_id)
-            address.delete()
-            return api_response(data=None, message="Delete address success", code=200, status=200)
-        except Address.DoesNotExist:
-            return api_response(data=None, message="Address not found", code=404, status=404)
+    
 
 def update_address(request, addressid):
     # Lấy user_id từ Authorization header
@@ -378,7 +365,6 @@ def update_address(request, addressid):
     if not auth_header or not auth_header.startswith("Bearer "):
         return api_response(data=None, message="Missing or invalid token", code=401, status=401)
     user_id = auth_header.split(" ")[1]
-
 
     # Sửa địa chỉ
     if request.method == 'POST':
@@ -394,6 +380,18 @@ def update_address(request, addressid):
             return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
         except Exception as e:
             return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
+
+    # DELETE: Xóa địa chỉ (cần truyền address_id trong body)
+    if request.method == 'DELETE':
+        
+        if not addressid:
+            return api_response(data=None, message="Missing address_id", code=400, status=400)
+        try:
+            address = Address.objects.get(address_id=addressid, user_id=user_id)
+            address.delete()
+            return api_response(data=None, message="Delete address success", code=200, status=200)
+        except Address.DoesNotExist:
+            return api_response(data=None, message="Address not found", code=404, status=404)
 
 @api_view(['POST'])
 def add_ordered_product(request):
