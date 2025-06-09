@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import add_to_cart, increase_cart_item, decrease_cart_item,address_api
-from .views import login, get_users, signup, cart, remove_from_cart, update_user, change_password,favourite
+from .views import login, get_users, signup, cart, remove_from_cart, update_user, change_password,favourite, update_address
 from .views import add_ordered_product
 
 urlpatterns = [
@@ -20,6 +20,8 @@ urlpatterns = [
     path('favourite/<str:productid>', favourite, name='favourite_post'),  # POST /api/users/favourite/<productid>
     
     path('address', address_api, name='address_api'),
+    
+    path('address/<str:addressid>', update_address, name='address_api_update'),
     
     path('ordered_product', add_ordered_product, name='add_ordered_product'),
 ]

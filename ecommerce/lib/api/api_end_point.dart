@@ -18,11 +18,12 @@ class ApiEndpoint {
   static String productYouLike = "$DOMAIN/users/favourite";
   static String userCart = "$DOMAIN/users/cart";
   static String updateUser = "$DOMAIN/users/update";
+  static String updateUserPassword = "$DOMAIN/users/changepw";
+  static String adress = "$DOMAIN/users/address";
 
   // end point product
   static String product = "$DOMAIN/products";
-
-  // static String search = "$DOMAIN/search";
+  static String myproduct = "$DOMAIN/products/myproduct";
   static String review = "$DOMAIN/products/review";
   static String upload = "$DOMAIN/products/upload";
 }

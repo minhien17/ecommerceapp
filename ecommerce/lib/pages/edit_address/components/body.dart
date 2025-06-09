@@ -7,9 +7,9 @@ import '../../../size_config.dart';
 import 'address_details_form.dart';
 
 class Body extends StatelessWidget {
-  final String addressIdToEdit;
+  final AddressModel address;
 
-  const Body({Key? key, required this.addressIdToEdit}) : super(key: key);
+  const Body({Key? key, required this.address}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -28,29 +28,11 @@ class Body extends StatelessWidget {
                   style: headingStyle,
                 ),
                 SizedBox(height: getProportionateScreenHeight(30)),
-                addressIdToEdit == ''
+                address.addressId == ''
                     ? AddressDetailsForm(
-                        addressToEdit: Address(),
+                        address: AddressModel(),
                       )
-                    : FutureBuilder<Address>(
-                        future: UserDatabaseHelper()
-                            .getAddressFromId(addressIdToEdit),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasData) {
-                            final address = snapshot.data;
-                            return AddressDetailsForm(
-                                addressToEdit: address ?? Address());
-                          } else if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          return AddressDetailsForm(
-                            addressToEdit: Address(),
-                          );
-                        },
-                      ),
+                    : AddressDetailsForm(address: address),
                 SizedBox(height: getProportionateScreenHeight(40)),
               ],
             ),

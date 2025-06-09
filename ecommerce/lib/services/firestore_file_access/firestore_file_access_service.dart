@@ -44,12 +44,6 @@ class FirestoreFilesAccess {
     }
   }
 
-  Future<bool> deleteFileFromPath(String path) async {
-    final Reference firestorageRef = FirebaseStorage.instance.ref();
-    await firestorageRef.child(path).delete();
-    return true;
-  }
-
   Future<String> getDeveloperImage() async {
     const filename = "about_developer/developer";
     List<String> extensions = <String>["jpg", "jpeg", "jpe", "jfif"];

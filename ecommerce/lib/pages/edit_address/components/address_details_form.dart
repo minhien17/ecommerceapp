@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../models/address_model.dart';
@@ -8,10 +12,10 @@ import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 
 class AddressDetailsForm extends StatefulWidget {
-  final Address addressToEdit;
+  final AddressModel address;
   AddressDetailsForm({
     Key? key,
-    required this.addressToEdit,
+    required this.address,
   }) : super(key: key);
 
   @override
@@ -87,25 +91,24 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
           SizedBox(height: getProportionateScreenHeight(30)),
           DefaultButton(
             text: "Save Address",
-            press: widget.addressToEdit.id == ''
+            press: widget.address.addressId == ''
                 ? saveNewAddressButtonCallback
                 : saveEditedAddressButtonCallback,
           ),
         ],
       ),
     );
-    if (widget.addressToEdit != null) {
-      titleFieldController.text = widget.addressToEdit.title ?? "";
-      receiverFieldController.text = widget.addressToEdit.receiver ?? "";
-      addressLine1FieldController.text = widget.addressToEdit.addresLine1 ?? "";
-      addressLine2FieldController.text =
-          widget.addressToEdit.addressLine2 ?? "";
-      cityFieldController.text = widget.addressToEdit.city ?? "";
-      districtFieldController.text = widget.addressToEdit.district ?? "";
-      stateFieldController.text = widget.addressToEdit.state ?? "";
-      landmarkFieldController.text = widget.addressToEdit.landmark ?? "";
-      pincodeFieldController.text = widget.addressToEdit.pincode ?? "";
-      phoneFieldController.text = widget.addressToEdit.phone ?? "";
+    if (widget.address != null) {
+      titleFieldController.text = widget.address.title;
+      receiverFieldController.text = widget.address.receiver;
+      addressLine1FieldController.text = widget.address.addressLine1;
+      addressLine2FieldController.text = widget.address.addressLine2;
+      cityFieldController.text = widget.address.city;
+      districtFieldController.text = widget.address.district;
+      stateFieldController.text = widget.address.state;
+      landmarkFieldController.text = widget.address.landmark;
+      pincodeFieldController.text = widget.address.pincode;
+      phoneFieldController.text = widget.address.phone;
     }
     return form;
   }
@@ -310,24 +313,18 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
   Future<void> saveNewAddressButtonCallback() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final Address newAddress = generateAddressObject();
+      final AddressModel newAddress = generateAddressObject();
       bool status = false;
       String snackbarMessage = '';
       try {
-        status =
-            await UserDatabaseHelper().addAddressForCurrentUser(newAddress);
+        status = await addAddress(newAddress);
+        //     await UserDatabaseHelper().addAddressForCurrentUser(newAddress);
         if (status == true) {
           snackbarMessage = "Address saved successfully";
           Navigator.pop(context);
         } else {
           throw "Coundn't save the address due to unknown reason";
         }
-      } on FirebaseException catch (e) {
-        Logger().w("Firebase Exception: $e");
-        snackbarMessage = "Something went wrong";
-      } catch (e) {
-        Logger().w("Unknown Exception: $e");
-        snackbarMessage = "Something went wrong";
       } finally {
         Logger().i(snackbarMessage);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -342,14 +339,14 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
   Future<void> saveEditedAddressButtonCallback() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final Address newAddress =
-          generateAddressObject(id: widget.addressToEdit.id);
+      final AddressModel newAddress =
+          generateAddressObject(id: widget.address.addressId);
 
       bool status = false;
       String snackbarMessage = '';
       try {
-        status =
-            await UserDatabaseHelper().updateAddressForCurrentUser(newAddress);
+        status = await updateAddress(newAddress);
+        //     await UserDatabaseHelper().updateAddressForCurrentUser(newAddress);
         if (status == true) {
           snackbarMessage = "Address updated successfully";
           Navigator.pop(context);
@@ -373,12 +370,49 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
     }
   }
 
-  Address generateAddressObject({String? id}) {
-    return Address(
-      id: id,
+  Future<bool> addAddress(AddressModel address) async {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.adress, // Endpoint để thêm địa chỉ
+      body: address.toJson(), // Chuyển đổi AddressModel thành JSON
+      onSuccess: (response) {
+        completer.complete(true); // Thành công
+      },
+      onError: (error) {
+        Logger().e("Error adding address: $error");
+        completer.complete(false); // Thất bại
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<bool> updateAddress(AddressModel address) async {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.post(
+      url:
+          "${ApiEndpoint.adress}/${address.addressId}", // Endpoint để cập nhật địa chỉ
+      body: address.toJson(), // Chuyển đổi AddressModel thành JSON
+      onSuccess: (response) {
+        completer.complete(true); // Thành công
+      },
+      onError: (error) {
+        Logger().e("Error updating address: $error");
+        completer.complete(false); // Thất bại
+      },
+    );
+
+    return completer.future;
+  }
+
+  AddressModel generateAddressObject({String? id}) {
+    return AddressModel.full(
+      addressId: id,
       title: titleFieldController.text,
       receiver: receiverFieldController.text,
-      addresLine1: addressLine1FieldController.text,
+      addressLine1: addressLine1FieldController.text,
       addressLine2: addressLine2FieldController.text,
       city: cityFieldController.text,
       district: districtFieldController.text,

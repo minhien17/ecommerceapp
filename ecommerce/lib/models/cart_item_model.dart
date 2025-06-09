@@ -46,4 +46,8 @@ class CartItemModel {
 
   String get id => _productId ?? "";
   int get itemCount => _itemCount ?? 0;
+
+  set itemCount(int count) {
+    _itemCount = count;
+  }
 }

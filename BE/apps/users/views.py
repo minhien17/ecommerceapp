@@ -131,14 +131,14 @@ def add_to_cart(request, productid):
 
     user_id = auth_header.split(" ")[1]
     try:
-        # KIỂM TRA TRƯỚC
-        cart_item = CartItem.objects.filter(cart_id=user_id, product_id=productid).first()
+         # Kiểm tra xem bản ghi đã tồn tại hay chưa
+        cart_item = CartItem.objects.get(cart_id=user_id, product_id=productid)
         if cart_item:
             cart_item.item_count += 1
             cart_item.save()
         else:
-            CartItem.objects.create(cart_id=user_id, product_id=productid, item_count=1)
-
+            cart_item = CartItem(cart_id=user_id, product_id=productid, item_count=1)
+        cart_item.save()
         return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
 
     except Exception as e:
@@ -298,7 +298,7 @@ def favourite(request, productid=None):
                 "title": product.title or None,
                 "variant": product.variant or None
             })
-        return Response(data)
+        return Response(data, content_type='application/json; charset=utf-8')
 
     # POST: thêm/xóa product_id khỏi danh sách yêu thích
     if request.method == 'POST':
@@ -333,7 +333,9 @@ def address_api(request):
     if request.method == 'POST':
         try:
             data = request.data.copy()
-            data['user_id'] = user_id
+            # Tạo product_id tự động
+            address_id = f"p{uuid.uuid4().hex[:8]}"
+            data['address_id'] = address_id
             if not data.get('address_id'):
                 return api_response(data=None, message="Missing address_id", code=400, status=400)
             print("DEBUG - Data gửi vào serializer:", data)  # Thêm dòng này để kiểm tra
@@ -351,19 +353,6 @@ def address_api(request):
 
 
     # PUT: Sửa địa chỉ (cần truyền address_id trong body)
-    if request.method == 'PUT':
-        address_id = request.data.get('address_id')
-        if not address_id:
-            return api_response(data=None, message="Missing address_id", code=400, status=400)
-        try:
-            address = Address.objects.get(address_id=address_id, user_id=user_id)
-        except Address.DoesNotExist:
-            return api_response(data=None, message="Address not found", code=404, status=404)
-        serializer = AddressSerializer(address, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return api_response(data=serializer.data, message="Update address success", code=200, status=200)
-        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
 
     # DELETE: Xóa địa chỉ (cần truyền address_id trong body)
     if request.method == 'DELETE':
@@ -377,6 +366,28 @@ def address_api(request):
         except Address.DoesNotExist:
             return api_response(data=None, message="Address not found", code=404, status=404)
 
+def update_address(request, addressid):
+    # Lấy user_id từ Authorization header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+
+
+    # Sửa địa chỉ
+    if request.method == 'POST':
+
+        try:
+            if not Address.objects.filter(address_id=addressid, user_id=user_id).exists():
+                return api_response(data=None, message="Address not found", code=404, status=404)
+
+            serializer = AddressSerializer(data=request.data)
+            if serializer.is_valid():
+                Address.objects.filter(address_id=addressid, user_id=user_id).update(**serializer.validated_data)
+                return api_response(data=serializer.data, message="Update address success", code=200, status=200)
+            return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+        except Exception as e:
+            return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
 
 @api_view(['POST'])
 def add_ordered_product(request):
