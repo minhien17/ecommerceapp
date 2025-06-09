@@ -34,7 +34,8 @@ class Cart(models.Model):
         return self.user_id
 
 class CartItem(models.Model):
-    cart_id = models.CharField(max_length=255, primary_key=True)  # Chính là user_id
+    row_id = models.AutoField(primary_key=True)  # Trường này chỉ để ORM không tạo id, không dùng trong logic
+    cart_id = models.CharField(max_length=255)  # Chính là user_id
     product_id = models.CharField(max_length=255)
     item_count = models.IntegerField(default=1)
 
