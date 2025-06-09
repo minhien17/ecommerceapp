@@ -21,7 +21,7 @@ urlpatterns = [
     
     path('address', address_api, name='address_api'),
     
-    path('address/<str:addressid>', update_address, name='address_api_update'),
+    path('address/<int:addressid>', update_address, name='address_api_update'),
     
     path('ordered_product', add_ordered_product, name='add_ordered_product'),
 ]

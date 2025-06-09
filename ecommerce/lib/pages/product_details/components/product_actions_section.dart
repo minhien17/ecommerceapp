@@ -12,7 +12,6 @@ import '../../../api/api_util.dart';
 import '../../../common/widgets/flutter_toast.dart';
 import '../../../models/product_model.dart';
 import '../../../services/authentication/authentification_service.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 import '../../../utils.dart';
 import '../../home/components/top_rounded_container.dart';
