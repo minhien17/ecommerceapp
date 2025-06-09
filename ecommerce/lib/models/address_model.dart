@@ -144,16 +144,33 @@ class AddressModel {
     _phone = json['phone'];
   }
 
+  // Convert AddressModel to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'address_id': _addressId,
+      'title': _title,
+      'receiver': _receiver,
+      'address_line_1': _addressLine1,
+      'address_line_2': _addressLine2,
+      'city': _city,
+      'district': _district,
+      'state': _state,
+      'landmark': _landmark,
+      'pincode': _pincode,
+      'phone': _phone,
+    };
+  }
+
   // Getters
-  String get addressId => _addressId ?? "address_id";
-  String get title => _title ?? "title";
-  String get receiver => _receiver ?? "receiver";
-  String get addressLine1 => _addressLine1 ?? "address_line_1";
-  String get addressLine2 => _addressLine2 ?? "address_line_2";
-  String get city => _city ?? "city";
-  String get district => _district ?? "district";
-  String get state => _state ?? "state";
-  String get landmark => _landmark ?? "landmark";
-  String get pincode => _pincode ?? "pincode";
-  String get phone => _phone ?? "phone";
+  String get addressId => _addressId ?? "";
+  String get title => _title ?? "";
+  String get receiver => _receiver ?? "";
+  String get addressLine1 => _addressLine1 ?? "";
+  String get addressLine2 => _addressLine2 ?? "";
+  String get city => _city ?? "";
+  String get district => _district ?? "";
+  String get state => _state ?? "";
+  String get landmark => _landmark ?? "";
+  String get pincode => _pincode ?? "";
+  String get phone => _phone ?? "";
 }

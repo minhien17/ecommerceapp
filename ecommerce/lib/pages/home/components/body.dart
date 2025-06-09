@@ -176,6 +176,7 @@ class _BodyState extends State<Body> {
                 SizedBox(
                   height: SizeConfig.screenHeight * 0.5,
                   child: ProductsSection(
+                    key: ValueKey(_refreshKey), // key thay đổi thì sẽ rebuild
                     sectionTitle: "Products You Like",
                     emptyListMessage: "Add Product to Favourites",
                     onProductCardTapped: onProductCardTapped,

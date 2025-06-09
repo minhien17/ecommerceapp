@@ -28,10 +28,11 @@ class Body extends StatefulWidget {
 
 class _BodyState extends State<Body> {
   PersistentBottomSheetController? bottomSheetHandler;
-  List<CartItemModel> listCart = [];
+  late Future<List<CartItemModel>> _listCart;
   @override
   void initState() {
     super.initState();
+    _listCart = getListCart();
   }
 
   @override
@@ -74,13 +75,14 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Future<void> refreshPage() {
-    return Future<void>.value();
+  Future<void> refreshPage() async {
+    _listCart = getListCart();
+    setState(() {});
   }
 
   Widget buildCartItemsList() {
     return FutureBuilder<List<CartItemModel>>(
-      future: getListCart(),
+      future: _listCart,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           List<CartItemModel> cartItems = snapshot.data as List<CartItemModel>;
@@ -467,7 +469,6 @@ class _BodyState extends State<Body> {
         );
       },
     );
-    await refreshPage();
   }
 
   void shutBottomSheet() {
@@ -482,6 +483,7 @@ class _BodyState extends State<Body> {
       url: "${ApiEndpoint.userCart}/$id/increase",
       onSuccess: (response) {
         // Do nothing, just return
+        refreshPage();
       },
       onError: (error) {
         if (error is TimeoutException) {
@@ -507,7 +509,7 @@ class _BodyState extends State<Body> {
     final future = ApiUtil.getInstance()!.post(
       url: "${ApiEndpoint.userCart}/$id/decrease",
       onSuccess: (response) {
-        // Do nothing, just return
+        refreshPage();
       },
       onError: (error) {
         if (error is TimeoutException) {

@@ -1,7 +1,13 @@
+import 'dart:async';
+
+import 'package:ecommerce/models/address_model.dart';
 import 'package:ecommerce/pages/manage_addresses/components/address_short_details_card.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
 import '../../../components/nothingtoshow.dart';
 import '../../../constants.dart';
@@ -15,14 +21,40 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
+  late Future<List<AddressModel>> _listAddresses;
   @override
   void initState() {
     super.initState();
+    _listAddresses = getAddressList();
   }
 
   @override
   void dispose() {
     super.dispose();
+  }
+
+  Future<List<AddressModel>> getAddressList() async {
+    final completer = Completer<List<AddressModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.adress, // Endpoint lấy danh sách địa chỉ
+      onSuccess: (response) {
+        List<AddressModel> addresses = (response.data['data'] as List)
+            .map((json) => AddressModel.fromJson(json))
+            .toList();
+        completer.complete(addresses);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Request timed out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete([]);
+      },
+    );
+
+    return completer.future;
   }
 
   @override
@@ -56,7 +88,7 @@ class _BodyState extends State<Body> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              EditAddressScreen(addressIdToEdit: ''),
+                              EditAddressScreen(address: AddressModel()),
                         ),
                       );
                       await refreshPage();
@@ -65,7 +97,8 @@ class _BodyState extends State<Body> {
                   SizedBox(height: getProportionateScreenHeight(30)),
                   SizedBox(
                     height: SizeConfig.screenHeight * 0.7,
-                    child: FutureBuilder<List<String>>(
+                    child: FutureBuilder<List<AddressModel>>(
+                      future: _listAddresses,
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           final addresses = snapshot.data;
@@ -174,24 +207,23 @@ class _BodyState extends State<Body> {
   }
 
   Future<bool> editButtonCallback(
-      BuildContext context, String addressId) async {
+      BuildContext context, AddressModel address) async {
     await Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) =>
-                EditAddressScreen(addressIdToEdit: addressId)));
+            builder: (context) => EditAddressScreen(address: address)));
     await refreshPage();
     return false;
   }
 
-  Future<void> addressItemTapCallback(String addressId) async {
+  Future<void> addressItemTapCallback(AddressModel address) async {
     await showDialog(
       context: context,
       builder: (context) {
         return SimpleDialog(
           backgroundColor: Colors.transparent,
           title: AddressBox(
-            addressId: addressId,
+            address: address,
           ),
           titlePadding: EdgeInsets.zero,
         );
@@ -200,13 +232,13 @@ class _BodyState extends State<Body> {
     await refreshPage();
   }
 
-  Widget buildAddressItemCard(String addressId) {
+  Widget buildAddressItemCard(AddressModel address) {
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: 6,
       ),
       child: Dismissible(
-        key: Key(addressId),
+        key: Key(address.addressId),
         direction: DismissDirection.horizontal,
         background: buildDismissibleSecondaryBackground(),
         secondaryBackground: buildDismissiblePrimaryBackground(),
@@ -215,17 +247,18 @@ class _BodyState extends State<Body> {
           DismissDirection.startToEnd: 0.65,
         },
         child: AddressShortDetailsCard(
-          addressId: addressId,
+          address: address,
           onTap: () async {
-            await addressItemTapCallback(addressId);
+            await addressItemTapCallback(address);
           },
         ),
         confirmDismiss: (direction) async {
           if (direction == DismissDirection.startToEnd) {
-            final status = await deleteButtonCallback(context, addressId);
+            final status =
+                await deleteButtonCallback(context, address.addressId);
             return status;
           } else if (direction == DismissDirection.endToStart) {
-            final status = await editButtonCallback(context, addressId);
+            final status = await editButtonCallback(context, address);
             return status;
           }
           return false;

@@ -612,7 +612,7 @@ class _EditProductFormState extends State<EditProductForm> {
         ),
       );
     }
-    if (productId != '') {
+    if (productId == '') {
       Navigator.pop(context);
       return;
     }
@@ -660,21 +660,15 @@ class _EditProductFormState extends State<EditProductForm> {
       } else {
         throw "Couldn't upload product properly, please retry";
       }
-    } on FirebaseException catch (e) {
-      Logger().w("Firebase Exception: $e");
-      snackbarMessage = "Something went wrong";
-    } catch (e) {
-      Logger().w("Unknown Exception: $e");
-      snackbarMessage = e.toString();
     } finally {
       Logger().i(snackbarMessage);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(snackbarMessage),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text(snackbarMessage),
+      //   ),
+      // );
+      Navigator.pop(context);
     }
-    Navigator.pop(context);
   }
 
   Future<bool> uploadProductImages(String productId) async {
@@ -789,6 +783,7 @@ class _EditProductFormState extends State<EditProductForm> {
 
     ApiUtil.getInstance()!.post(
       url: ApiEndpoint.upload, // Endpoint được truyền vào
+      body: product.toJson(),
       onSuccess: (response) {
         String productId = response.data['data']['product_id'];
         completer.complete(productId);
