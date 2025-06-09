@@ -64,11 +64,6 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
                     );
                   },
                 );
-                updateFuture.then((_) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Password updated")),
-                  );
-                });
               },
             ),
           ],
@@ -150,24 +145,24 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
     final completer = Completer<void>();
 
     ApiUtil.getInstance()!.post(
-      url: ApiEndpoint.updateUser, // Endpoint cập nhật user
+      url: ApiEndpoint.updateUserPassword, // Endpoint cập nhật user
       body: {
         "current_password": currentPassword, // Truyền mật khẩu hiện tại
         "new_password": newPassword, // Truyền mật khẩu mới
       },
       onSuccess: (response) async {
         final data = response.data;
-        if (data['success'] == true) {
+        if (data['data']['success'] == true) {
           toastInfo(msg: "Password changed successfully");
           completer.complete();
         } else {
           toastInfo(msg: data['message'] ?? "Failed to change password");
-          completer.completeError("Failed to change password");
+          completer.complete();
         }
       },
       onError: (error) {
         toastInfo(msg: error.toString());
-        completer.completeError(error);
+        completer.complete(error);
       },
     );
 

@@ -288,7 +288,7 @@ def favourite(request, productid=None):
                 "title": product.title or None,
                 "variant": product.variant or None
             })
-        return Response(data)
+        return Response(data, content_type='application/json; charset=utf-8')
 
     # POST: thêm/xóa product_id khỏi danh sách yêu thích
     if request.method == 'POST':

@@ -5,8 +5,6 @@ import 'package:logger/logger.dart';
 import '../../../components/default_button.dart';
 import '../../../components/nothingtoshow.dart';
 import '../../../constants.dart';
-import '../../../services/data_stream/addresses_stream.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 import '../../edit_address/edit_address_screen.dart';
 import '../components/address_box.dart';
@@ -17,18 +15,14 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  final AddressesStream addressesStream = AddressesStream();
-
   @override
   void initState() {
     super.initState();
-    addressesStream.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    addressesStream.dispose();
   }
 
   @override
@@ -71,8 +65,7 @@ class _BodyState extends State<Body> {
                   SizedBox(height: getProportionateScreenHeight(30)),
                   SizedBox(
                     height: SizeConfig.screenHeight * 0.7,
-                    child: StreamBuilder<List<String>>(
-                      stream: addressesStream.stream as Stream<List<String>>,
+                    child: FutureBuilder<List<String>>(
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           final addresses = snapshot.data;
@@ -120,7 +113,6 @@ class _BodyState extends State<Body> {
   }
 
   Future<void> refreshPage() {
-    addressesStream.reload();
     return Future<void>.value();
   }
 
@@ -154,8 +146,8 @@ class _BodyState extends State<Body> {
       bool status = false;
       String snackbarMessage = '';
       try {
-        status =
-            await UserDatabaseHelper().deleteAddressForCurrentUser(addressId);
+        // status =
+        //     await UserDatabaseHelper().deleteAddressForCurrentUser(addressId);
         if (status == true) {
           snackbarMessage = "Address deleted successfully";
         } else {

@@ -15,7 +15,7 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
     }, status=status, content_type='application/json; charset=utf-8')
 
 # Product detail
-@api_view(['GET', 'POST'])
+@api_view(['GET', 'POST','DELETE'])
 def product_detail(request, productid):
     try:
         product = Product.objects.get(product_id=productid)
@@ -43,6 +43,7 @@ def product_detail(request, productid):
         return api_response(data=data, message="Get product detail success")
 
     elif request.method == 'POST':
+        print(productid)
         # Cập nhật các trường nếu có trong request.data
         for field in ["description", "highlight", "original_price", "product_type", "rating", "search_tags", "seller", "title", "variant", "owner"]:
             if field in request.data:
@@ -54,6 +55,12 @@ def product_detail(request, productid):
             product.search_tags = ','.join(request.data['search_tags'])
         product.save()
         return api_response(message="Update product success", data={"product_id": product.product_id})
+    
+    elif request.method == 'DELETE':
+        # Kiểm tra xem sản phẩm có tồn tại và thuộc về người dùng
+        product = Product.objects.get(product_id=productid)
+        product.delete()
+        return api_response(data={"success": True}, message="Product deleted successfully", code=200, status=200)
     
 # Product list, filter, search
 @api_view(['GET'])

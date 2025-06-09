@@ -159,12 +159,13 @@ class _BodyState extends State<Body> {
       BuildContext context, ChosenImage bodyState) async {
     final supabase = Supabase.instance.client;
     const bucketName = 'ecommerce';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
 
     String snackbarMessage = '';
     try {
       String email = await SharedPreferenceUtil.getEmail();
 
-      final path = 'user/display_picture/$email.jpg';
+      final path = 'user/display_picture/$timestamp.jpg';
 
       final response = await supabase.storage.from('ecommerce').upload(
             path, // thay đổi từ path
@@ -217,35 +218,6 @@ class _BodyState extends State<Body> {
   Future<void> removeImageFromFirestore(
       BuildContext context, ChosenImage bodyState) async {
     bool status = false;
-    String snackbarMessage = '';
-    try {
-      bool fileDeletedFromFirestore = false;
-      fileDeletedFromFirestore = await FirestoreFilesAccess()
-          .deleteFileFromPath(
-              UserDatabaseHelper().getPathForCurrentUserDisplayPicture());
-      if (fileDeletedFromFirestore == false) {
-        throw "Couldn't delete file from Storage, please retry";
-      }
-      status = await UserDatabaseHelper().removeDisplayPictureForCurrentUser();
-      if (status == true) {
-        snackbarMessage = "Picture removed successfully";
-      } else {
-        throw "Coulnd't removed due to unknown reason";
-      }
-    } on FirebaseException catch (e) {
-      Logger().w("Firebase Exception: $e");
-      snackbarMessage = "Something went wrong";
-    } catch (e) {
-      Logger().w("Unknown Exception: $e");
-      snackbarMessage = "Something went wrong";
-    } finally {
-      Logger().i(snackbarMessage);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(snackbarMessage),
-        ),
-      );
-    }
   }
 
   Future<void> postURL(String url) async {

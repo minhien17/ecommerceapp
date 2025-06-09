@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce/components/default_button.dart';
+import 'package:ecommerce/components/product_card.dart';
 import 'package:ecommerce/constants.dart';
 import 'package:ecommerce/exceptions/local_files/local_file_handling.dart';
 import 'package:ecommerce/models/product_model.dart';
@@ -17,6 +19,11 @@ import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 import 'package:material_tag_editor/tag_editor.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 
 class EditProductForm extends StatefulWidget {
   final ProductModel product;
@@ -519,21 +526,27 @@ class _EditProductFormState extends State<EditProductForm> {
 
   Future<void> saveProductButtonCallback(BuildContext context) async {
     if (validateBasicDetailsForm() == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Erros in Basic Details Form"),
-        ),
-      );
-      return;
+      if (newProduct == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Errors in Basic Details Form"),
+          ),
+        );
+        return;
+      }
     }
+
     if (validateDescribeProductForm() == false) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Errors in Describe Product Form"),
-        ),
-      );
-      return;
+      if (newProduct == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Errors in Describe Product Form"),
+          ),
+        );
+        return;
+      }
     }
+
     final productDetails = Provider.of<ProductDetails>(context, listen: false);
     if (productDetails.selectedImages.length < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -559,32 +572,32 @@ class _EditProductFormState extends State<EditProductForm> {
       );
       return;
     }
-    String productId = '';
+    String productId = product.id;
     String snackbarMessage = '';
     try {
-      // product.productType = productDetails.productType;
-      // product.searchTags = productDetails.searchTags;
-      // final productUploadFuture = newProduct
-      //     ? ProductDatabaseHelper().addUsersProduct(product)
-      //     : ProductDatabaseHelper().updateUsersProduct(product);
-      // productUploadFuture.then((value) {
-      //   productId = value;
-      // });
-      // await showDialog(
-      //   context: context,
-      //   builder: (context) {
-      //     return FutureProgressDialog(
-      //       productUploadFuture,
-      //       message:
-      //           Text(newProduct ? "Uploading Product" : "Updating Product"),
-      //     );
-      //   },
-      // );
-      // if (productId != null) {
-      //   snackbarMessage = "Product Info updated successfully";
-      // } else {
-      //   throw "Couldn't update product info due to some unknown issue";
-      // }
+      product.productType = productDetails.productType;
+      product.searchTags = productDetails.searchTags;
+
+      final productUploadFuture =
+          newProduct ? addProduct(product) : updateProduct(product);
+      productUploadFuture.then((value) {
+        productId = value;
+      });
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return FutureProgressDialog(
+            productUploadFuture,
+            message:
+                Text(newProduct ? "Uploading Product" : "Updating Product"),
+          );
+        },
+      );
+      if (productId != '') {
+        snackbarMessage = "Product Info updated successfully";
+      } else {
+        throw "Couldn't update product info due to some unknown issue";
+      }
     } on FirebaseException catch (e) {
       Logger().w("Firebase Exception: $e");
       snackbarMessage = "Something went wrong";
@@ -599,7 +612,10 @@ class _EditProductFormState extends State<EditProductForm> {
         ),
       );
     }
-    if (productId == null) return;
+    if (productId != '') {
+      Navigator.pop(context);
+      return;
+    }
     bool allImagesUploaded = false;
     try {
       allImagesUploaded = await uploadProductImages(productId);
@@ -623,15 +639,13 @@ class _EditProductFormState extends State<EditProductForm> {
       );
     }
     List<String> downloadUrls = productDetails.selectedImages
-        // .map((e) => e.imgType == ImageType.network ? e.path : null)
-        // .toList();
         .where((e) => e.imgType == ImageType.network)
         .map((e) => e.path)
         .toList();
     bool productFinalizeUpdate = false;
+    product = product.copyWith(id: productId, images: downloadUrls);
     try {
-      final updateProductFuture =
-          ProductDatabaseHelper().updateProductsImages(productId, downloadUrls);
+      final updateProductFuture = updateProduct(product);
       productFinalizeUpdate = await showDialog(
         context: context,
         builder: (context) {
@@ -671,9 +685,8 @@ class _EditProductFormState extends State<EditProductForm> {
         print("Image being uploaded: " + productDetails.selectedImages[i].path);
         String downloadUrl = '';
         try {
-          final imgUploadFuture = FirestoreFilesAccess().uploadFileToPath(
-              File(productDetails.selectedImages[i].path),
-              ProductDatabaseHelper().getPathForProductImage(productId, i));
+          final imgUploadFuture =
+              uploadFileToPath(File(productDetails.selectedImages[i].path), '');
           downloadUrl = await showDialog(
             context: context,
             builder: (context) {
@@ -689,7 +702,7 @@ class _EditProductFormState extends State<EditProductForm> {
         } catch (e) {
           Logger().w("Firebase Exception: $e");
         } finally {
-          if (downloadUrl != null) {
+          if (downloadUrl != '') {
             productDetails.selectedImages[i] =
                 CustomImage(imgType: ImageType.network, path: downloadUrl);
           } else {
@@ -746,6 +759,75 @@ class _EditProductFormState extends State<EditProductForm> {
     } else {
       productDetails.setSelectedImageAtIndex(
           CustomImage(imgType: ImageType.local, path: path), index);
+    }
+  }
+
+  Future<String> updateProduct(ProductModel product) async {
+    final completer = Completer<String>();
+
+    ApiUtil.getInstance()!.post(
+      url: "${ApiEndpoint.product}/${product.id}", // Endpoint được truyền vào
+      body: product.toJson(),
+      onSuccess: (response) {
+        completer.complete(product.id);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Request timed out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(''); // Trả về danh sách rỗng nếu có lỗi
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<String> addProduct(ProductModel product) async {
+    final completer = Completer<String>();
+
+    ApiUtil.getInstance()!.post(
+      url: ApiEndpoint.upload, // Endpoint được truyền vào
+      onSuccess: (response) {
+        String productId = response.data['data']['product_id'];
+        completer.complete(productId);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Request timed out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(''); // Trả về danh sách rỗng nếu có lỗi
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<String> uploadFileToPath(File file, String path) async {
+    final supabaseCl = supabase.Supabase.instance.client;
+    const bucketName = 'ecommerce';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final path = 'products/images/$timestamp.jpg';
+
+    try {
+      final response = await supabaseCl.storage.from(bucketName).upload(
+            path, // thay đổi từ path
+            file,
+          );
+
+      if (response.isNotEmpty) {
+        final publicUrl =
+            supabaseCl.storage.from(bucketName).getPublicUrl(path);
+        return publicUrl;
+      } else {
+        throw Exception('Upload failed: empty response');
+      }
+    } catch (e) {
+      print('Upload error: $e');
+      rethrow;
     }
   }
 }

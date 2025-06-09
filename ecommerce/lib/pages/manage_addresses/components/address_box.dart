@@ -3,7 +3,6 @@ import 'package:logger/logger.dart';
 
 import '../../../constants.dart';
 import '../../../models/address_model.dart';
-import '../../../services/database/user_database_helper.dart';
 
 class AddressBox extends StatelessWidget {
   const AddressBox({
@@ -31,95 +30,95 @@ class AddressBox extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
               ),
               child: FutureBuilder<Address>(
-                  future: UserDatabaseHelper().getAddressFromId(addressId),
+                  // future: UserDatabaseHelper().getAddressFromId(addressId),
                   builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      final address = snapshot.data;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "${address!.title}",
-                            style: TextStyle(
-                              fontSize: 22,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          Text(
-                            "${address.receiver}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "${address.addresLine1}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "${address.addressLine2}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "City: ${address.city}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "District: ${address.district}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "State: ${address.state}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "Landmark: ${address.landmark}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "PIN: ${address.pincode}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "Phone: ${address.phone}",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      );
-                    } else if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    } else if (snapshot.hasError) {
-                      final error = snapshot.error.toString();
-                      Logger().e(error);
-                    }
-                    return Center(
-                      child: Icon(
-                        Icons.error,
-                        color: kTextColor,
-                        size: 60,
+                if (snapshot.hasData) {
+                  final address = snapshot.data;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${address!.title}",
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    );
-                  }),
+                      Text(
+                        "${address.receiver}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "${address.addresLine1}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "${address.addressLine2}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "City: ${address.city}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "District: ${address.district}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "State: ${address.state}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "Landmark: ${address.landmark}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "PIN: ${address.pincode}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        "Phone: ${address.phone}",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (snapshot.hasError) {
+                  final error = snapshot.error.toString();
+                  Logger().e(error);
+                }
+                return Center(
+                  child: Icon(
+                    Icons.error,
+                    color: kTextColor,
+                    size: 60,
+                  ),
+                );
+              }),
             ),
           ),
         ],

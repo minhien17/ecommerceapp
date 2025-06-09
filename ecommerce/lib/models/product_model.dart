@@ -220,4 +220,44 @@ class ProductModel {
     int discount = (((originalP - discountP) * 100) / originalP).round();
     return discount;
   }
+
+  ProductModel copyWith({
+    String? id,
+    List<String>? images,
+  }) {
+    return ProductModel()
+      .._productId = id ?? this._productId
+      .._images = images ?? this._images
+      .._title = this._title
+      .._variant = this._variant
+      .._discountPrice = this._discountPrice
+      .._originalPrice = this._originalPrice
+      .._rating = this._rating
+      .._highlights = this._highlights
+      .._description = this._description
+      .._seller = this._seller
+      .._favourite = this._favourite
+      .._owner = this._owner
+      .._productType = this._productType
+      .._searchTags = this._searchTags;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': _productId,
+      'images': _images,
+      'title': _title,
+      'variant': _variant,
+      'discount_price': _discountPrice,
+      'original_price': _originalPrice,
+      'rating': _rating,
+      'highlights': _highlights,
+      'description': _description,
+      'seller': _seller,
+      'favourite': _favourite,
+      'owner': _owner,
+      'product_type': _productType?.name,
+      'search_tags': _searchTags,
+    };
+  }
 }
