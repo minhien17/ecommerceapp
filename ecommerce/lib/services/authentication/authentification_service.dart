@@ -1,6 +1,5 @@
 import 'package:ecommerce/common/widgets/flutter_toast.dart';
 import 'package:ecommerce/exceptions/firebaseauth/messaged_firebase.dart';
-import 'package:ecommerce/services/database/user_database_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../exceptions/firebaseauth/credential_actions_exceptions.dart';
@@ -107,7 +106,7 @@ class AuthentificationService {
       if (userCredential.user!.emailVerified == false) {
         await userCredential.user!.sendEmailVerification();
       }
-      await UserDatabaseHelper().createNewUser(uid);
+      // await UserDatabaseHelper().createNewUser(uid);
       callback!();
     } on FirebaseAuthException catch (e) {
       if (e.code == EMAIL_ALREADY_IN_USE_EXCEPTION_CODE) {

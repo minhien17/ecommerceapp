@@ -145,12 +145,13 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Future<void> refreshPage() {
-    return Future<void>.value();
+  Future<void> refreshPage() async {
+    // Refresh the list of addresses
+    _listAddresses = getAddressList();
+    setState(() {});
   }
 
-  Future<bool> deleteButtonCallback(
-      BuildContext context, String addressId) async {
+  Future<bool> deleteButtonCallback(BuildContext context, int addressId) async {
     final confirmDeletion = await showDialog(
       context: context,
       builder: (context) {
@@ -186,12 +187,6 @@ class _BodyState extends State<Body> {
         } else {
           throw "Coulnd't delete address due to unknown reason";
         }
-      } on FirebaseException catch (e) {
-        Logger().w("Firebase Exception: $e");
-        snackbarMessage = "Something went wrong";
-      } catch (e) {
-        Logger().w("Unknown Exception: $e");
-        snackbarMessage = e.toString();
       } finally {
         Logger().i(snackbarMessage);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -238,7 +233,7 @@ class _BodyState extends State<Body> {
         vertical: 6,
       ),
       child: Dismissible(
-        key: Key(address.addressId),
+        key: Key("${address.addressId}"),
         direction: DismissDirection.horizontal,
         background: buildDismissibleSecondaryBackground(),
         secondaryBackground: buildDismissiblePrimaryBackground(),

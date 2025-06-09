@@ -8,7 +8,6 @@ import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
 import '../../../models/cart_item_model.dart';
 import '../../../models/product_model.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 
 class CheckoutCard extends StatelessWidget {

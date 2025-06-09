@@ -4,7 +4,6 @@ import 'package:ecommerce/models/user_model.dart';
 import 'package:ecommerce/pages/edit_product/edit_product_page.dart';
 import 'package:ecommerce/pages/sign_in/sign_in.dart';
 import 'package:ecommerce/services/authentication/authentification_service.dart';
-import 'package:ecommerce/services/database/user_database_helper.dart';
 import 'package:ecommerce/shared_preference.dart';
 import 'package:ecommerce/utils.dart';
 import 'package:ecommerce/wrappers/authentification_wrapper.dart';

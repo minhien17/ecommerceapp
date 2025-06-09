@@ -12,7 +12,6 @@ import '../../../models/review_model.dart';
 import '../../../services/authentication/authentification_service.dart';
 import '../../../services/data_stream/ordered_products_stream.dart';
 import '../../../services/database/product_database_helper.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 import '../../product_details/product_details_screen.dart';
 
@@ -22,18 +21,14 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  final OrderedProductsStream orderedProductsStream = OrderedProductsStream();
-
   @override
   void initState() {
     super.initState();
-    orderedProductsStream.init();
   }
 
   @override
   void dispose() {
     super.dispose();
-    orderedProductsStream.dispose();
   }
 
   @override
@@ -70,13 +65,11 @@ class _BodyState extends State<Body> {
   }
 
   Future<void> refreshPage() {
-    orderedProductsStream.reload();
     return Future<void>.value();
   }
 
   Widget buildOrderedProductsList() {
     return StreamBuilder<List<String>>(
-      stream: orderedProductsStream.stream as Stream<List<String>>,
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final orderedProductsIds = snapshot.data;
@@ -93,8 +86,8 @@ class _BodyState extends State<Body> {
             itemCount: orderedProductsIds.length,
             itemBuilder: (context, index) {
               return FutureBuilder<OrderedProduct>(
-                future: UserDatabaseHelper()
-                    .getOrderedProductFromId(orderedProductsIds[index]),
+                // future: UserDatabaseHelper()
+                //     .getOrderedProductFromId(orderedProductsIds[index]),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     final orderedProduct = snapshot.data;

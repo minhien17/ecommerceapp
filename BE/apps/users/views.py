@@ -1,3 +1,4 @@
+import random
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, serializers
@@ -331,8 +332,10 @@ def address_api(request):
         try:
             data = request.data.copy()
             # Tạo product_id tự động
-            address_id = f"p{uuid.uuid4().hex[:8]}"
+            address_id = random.randint(10000000, 99999999)
+
             data['address_id'] = address_id
+            data['user_id'] = user_id
             if not data.get('address_id'):
                 return api_response(data=None, message="Missing address_id", code=400, status=400)
             print("DEBUG - Data gửi vào serializer:", data)  # Thêm dòng này để kiểm tra

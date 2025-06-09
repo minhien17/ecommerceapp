@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 import '../../../models/address_model.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 
 class AddressShortDetailsCard extends StatelessWidget {

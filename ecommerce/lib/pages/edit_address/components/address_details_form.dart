@@ -8,7 +8,6 @@ import '../../../api/api_util.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../models/address_model.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../size_config.dart';
 
 class AddressDetailsForm extends StatefulWidget {
@@ -91,7 +90,7 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
           SizedBox(height: getProportionateScreenHeight(30)),
           DefaultButton(
             text: "Save Address",
-            press: widget.address.addressId == ''
+            press: widget.address.addressId == 0
                 ? saveNewAddressButtonCallback
                 : saveEditedAddressButtonCallback,
           ),
@@ -353,17 +352,11 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
         } else {
           throw "Couldn't update address due to unknown reason";
         }
-      } on FirebaseException catch (e) {
-        Logger().w("Firebase Exception: $e");
-        snackbarMessage = "Something went wrong";
-      } catch (e) {
-        Logger().w("Unknown Exception: $e");
-        snackbarMessage = "Something went wrong";
       } finally {
         Logger().i(snackbarMessage);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(snackbarMessage),
+            content: Text("snackbarMessage"),
           ),
         );
       }
@@ -407,7 +400,7 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
     return completer.future;
   }
 
-  AddressModel generateAddressObject({String? id}) {
+  AddressModel generateAddressObject({int? id}) {
     return AddressModel.full(
       addressId: id,
       title: titleFieldController.text,

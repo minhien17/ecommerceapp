@@ -9,7 +9,6 @@ import 'package:logger/logger.dart';
 import '../../../api/api_end_point.dart';
 import '../../../api/api_util.dart';
 import '../../../components/default_button.dart';
-import '../../../services/database/user_database_helper.dart';
 import '../../../shared_preference.dart';
 import '../../../size_config.dart';
 
