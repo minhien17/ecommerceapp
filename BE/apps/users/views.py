@@ -129,16 +129,19 @@ def add_to_cart(request, productid):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+
     user_id = auth_header.split(" ")[1]
     try:
          # Kiểm tra xem bản ghi đã tồn tại hay chưa
         cart_item = CartItem.objects.get(cart_id=user_id, product_id=productid)
         if cart_item:
             cart_item.item_count += 1
+            cart_item.save()
         else:
             cart_item = CartItem(cart_id=user_id, product_id=productid, item_count=1)
         cart_item.save()
         return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
+
     except Exception as e:
         return api_response(data=None, message="Add to cart failed", code=500, status=500, errMessage=str(e))
 
