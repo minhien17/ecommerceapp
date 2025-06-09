@@ -57,6 +57,23 @@ class _BodyState extends State<Body> {
     return completer.future;
   }
 
+  Future<bool> deleteAddress(int addressId) async {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.delete(
+      url: "${ApiEndpoint.adress}/$addressId", // Endpoint để xóa địa chỉ
+      onSuccess: (response) {
+        completer.complete(true); // Thành công
+      },
+      onError: (error) {
+        Logger().e("Error deleting address: $error");
+        completer.complete(false); // Thất bại
+      },
+    );
+
+    return completer.future;
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -180,8 +197,7 @@ class _BodyState extends State<Body> {
       bool status = false;
       String snackbarMessage = '';
       try {
-        // status =
-        //     await UserDatabaseHelper().deleteAddressForCurrentUser(addressId);
+        status = await deleteAddress(addressId);
         if (status == true) {
           snackbarMessage = "Address deleted successfully";
         } else {
