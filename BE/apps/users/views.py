@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import User, Cart, CartItem, Address
+from .models import User, Cart, CartItem, Address,OrderedProduct
 from apps.products.models import Product
 import uuid
 
@@ -50,6 +50,12 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = '__all__'
 
+class OrderedProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderedProduct
+        fields = ['ordered_product_id', 'order_date', 'product_id', 'user_id']
+        
+    
 @api_view(['POST'])
 def login(request):
     email = request.data.get('email')
@@ -366,3 +372,27 @@ def address_api(request):
             return api_response(data=None, message="Delete address success", code=200, status=200)
         except Address.DoesNotExist:
             return api_response(data=None, message="Address not found", code=404, status=404)
+
+
+@api_view(['POST'])
+def add_ordered_product(request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+    data = request.data.copy()
+    data['user_id'] = user_id
+
+    # Tự sinh ordered_product_id tăng dần
+    from .models import OrderedProduct
+    last = OrderedProduct.objects.order_by('-ordered_product_id').first()
+    data['ordered_product_id'] = (last.ordered_product_id + 1) if last else 1
+
+    try:
+        serializer = OrderedProductSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return api_response(data=serializer.data, message="Add ordered product success", code=201, status=201)
+        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
+    except Exception as e:
+        return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
