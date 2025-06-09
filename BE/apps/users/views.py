@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status, serializers
 from .models import User, Cart, CartItem, Address,OrderedProduct
 from apps.products.models import Product
+from django.views.decorators.csrf import csrf_exempt
 import uuid
 
 def api_response(data=None, message="", code=200, status=200, errMessage=""):
@@ -129,7 +130,6 @@ def add_to_cart(request, productid):
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return api_response(data=None, message="Missing or invalid token", code=401, status=401)
-
     user_id = auth_header.split(" ")[1]
     try:
         cart_item, created = CartItem.objects.get_or_create(
@@ -140,11 +140,7 @@ def add_to_cart(request, productid):
         if not created:
             cart_item.item_count += 1
             cart_item.save()
-        else:
-            cart_item = CartItem(cart_id=user_id, product_id=productid, item_count=1)
-        cart_item.save()
         return api_response(data={"success": True}, message="Add to cart success", code=200, status=200)
-
     except Exception as e:
         return api_response(data=None, message="Add to cart failed", code=500, status=500, errMessage=str(e))
 
@@ -358,40 +354,29 @@ def address_api(request):
             return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
 
     
-
+@csrf_exempt
+@api_view(['POST', 'DELETE'])
 def update_address(request, addressid):
-    # Lấy user_id từ Authorization header
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return api_response(data=None, message="Missing or invalid token", code=401, status=401)
     user_id = auth_header.split(" ")[1]
 
-    # Sửa địa chỉ
+    try:
+        address = Address.objects.get(address_id=addressid, user_id=user_id)
+    except Address.DoesNotExist:
+        return api_response(data=None, message="Address not found", code=404, status=404)
+
     if request.method == 'POST':
+        serializer = AddressSerializer(address, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return api_response(data=serializer.data, message="Update address success", code=200, status=200)
+        return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
 
-        try:
-            if not Address.objects.filter(address_id=addressid, user_id=user_id).exists():
-                return api_response(data=None, message="Address not found", code=404, status=404)
-
-            serializer = AddressSerializer(data=request.data)
-            if serializer.is_valid():
-                Address.objects.filter(address_id=addressid, user_id=user_id).update(**serializer.validated_data)
-                return api_response(data=serializer.data, message="Update address success", code=200, status=200)
-            return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
-        except Exception as e:
-            return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
-
-    # DELETE: Xóa địa chỉ (cần truyền address_id trong body)
     if request.method == 'DELETE':
-        
-        if not addressid:
-            return api_response(data=None, message="Missing address_id", code=400, status=400)
-        try:
-            address = Address.objects.get(address_id=addressid, user_id=user_id)
-            address.delete()
-            return api_response(data=None, message="Delete address success", code=200, status=200)
-        except Address.DoesNotExist:
-            return api_response(data=None, message="Address not found", code=404, status=404)
+        address.delete()
+        return api_response(data=None, message="Delete address success", code=200, status=200)
 
 @api_view(['POST'])
 def add_ordered_product(request):
