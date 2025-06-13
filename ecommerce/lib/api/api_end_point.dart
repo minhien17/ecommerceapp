@@ -1,7 +1,7 @@
 class ApiEndpoint {
   // host wifi
 
-  static String HOST = "192.168.3.56"; // mạng dữ liệu
+  static String HOST = "192.168.212.56"; // mạng dữ liệu
   //"192.168.1.103"; // FEF
 
   // đổi mạng wifi là phải thay đổi host
