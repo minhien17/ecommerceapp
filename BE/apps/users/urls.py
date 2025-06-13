@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import add_to_cart, increase_cart_item, decrease_cart_item,address_api
 from .views import login, get_users, signup, cart, remove_from_cart, update_user, change_password,favourite, update_address
-from .views import add_ordered_product
+from .views import add_ordered_product, get_all_ordered_products
 
 urlpatterns = [
     path('login', login, name='login'),
@@ -24,4 +24,5 @@ urlpatterns = [
     path('address/<int:addressid>', update_address, name='address_api_update'),
     
     path('ordered_product', add_ordered_product, name='add_ordered_product'),
+    path('ordered_products', get_all_ordered_products, name='get_all_ordered_products'),
 ]

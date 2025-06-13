@@ -400,3 +400,15 @@ def add_ordered_product(request):
         return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
     except Exception as e:
         return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
+    
+#get all ordered
+@api_view(['GET'])
+def get_all_ordered_products(request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+
+    orders = OrderedProduct.objects.filter(user_id=user_id).order_by('-order_date')
+    serializer = OrderedProductSerializer(orders, many=True)
+    return api_response(data=serializer.data, message="Get all ordered products success", code=200, status=200)
