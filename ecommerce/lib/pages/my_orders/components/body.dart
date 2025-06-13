@@ -9,9 +9,6 @@ import '../../../constants.dart';
 import '../../../models/order_product_model.dart';
 import '../../../models/product_model.dart';
 import '../../../models/review_model.dart';
-import '../../../services/authentication/authentification_service.dart';
-import '../../../services/data_stream/ordered_products_stream.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../size_config.dart';
 import '../../product_details/product_details_screen.dart';
 
@@ -212,63 +209,49 @@ class _BodyState extends State<Body> {
                   ),
                   child: ElevatedButton(
                     onPressed: () async {
-                      String currentUserUid =
-                          AuthentificationService().currentUser.uid;
-                      Review prevReview = Review('');
-                      try {
-                        prevReview = await ProductDatabaseHelper()
-                            .getProductReviewWithID(product.id, currentUserUid);
-                      } on FirebaseException catch (e) {
-                        Logger().w("Firebase Exception: $e");
-                      } catch (e) {
-                        Logger().w("Unknown Exception: $e");
-                      } finally {
-                        if (prevReview.id == '') {
-                          prevReview = Review(
-                            currentUserUid,
-                            reviewerUid: currentUserUid,
-                          );
-                        }
-                      }
+                      // String currentUserUid =
+                      //     AuthentificationService().currentUser.uid;
+                      // Review prevReview = Review('');
+                      // try {
+                      //   prevReview = await ProductDatabaseHelper()
+                      //       .getProductReviewWithID(product.id, currentUserUid);
+                      // } finally {
+                      //   if (prevReview.id == '') {
+                      //     prevReview = Review(
+                      //       currentUserUid,
+                      //       reviewerUid: currentUserUid,
+                      //     );
+                      //   }
+                      // }
 
-                      final result = await showDialog(
-                        context: context,
-                        builder: (context) {
-                          return ProductReviewDialog(
-                            review: prevReview,
-                          );
-                        },
-                      );
-                      if (result is Review) {
-                        bool reviewAdded = false;
-                        String snackbarMessage = '';
-                        try {
-                          result.reviewerUid =
-                              AuthentificationService().currentUser.uid;
-                          reviewAdded = await ProductDatabaseHelper()
-                              .addProductReview(product.id, result);
-                          if (reviewAdded == true) {
-                            snackbarMessage =
-                                "Product review added successfully";
-                          } else {
-                            throw "Coulnd't add product review due to unknown reason";
-                          }
-                        } on FirebaseException catch (e) {
-                          Logger().w("Firebase Exception: $e");
-                          snackbarMessage = e.toString();
-                        } catch (e) {
-                          Logger().w("Unknown Exception: $e");
-                          snackbarMessage = e.toString();
-                        } finally {
-                          Logger().i(snackbarMessage);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(snackbarMessage),
-                            ),
-                          );
-                        }
-                      }
-                      await refreshPage();
+                      // final result = await showDialog(
+                      //   context: context,
+                      //   builder: (context) {
+                      //     return ProductReviewDialog(
+                      //       review: prevReview,
+                      //     );
+                      //   },
+                      // );
+                      // if (result is Review) {
+                      //   bool reviewAdded = false;
+                      //   String snackbarMessage = '';
+                      //   try {
+                      //     if (reviewAdded == true) {
+                      //       snackbarMessage =
+                      //           "Product review added successfully";
+                      //     } else {
+                      //       throw "Coulnd't add product review due to unknown reason";
+                      //     }
+                      //   } finally {
+                      //     Logger().i(snackbarMessage);
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(
+                      //         content: Text(snackbarMessage),
+                      //       ),
+                      //     );
+                      //   }
+                      // }
+                      // await refreshPage();
                     },
                     child: Text(
                       "Give Product Review",

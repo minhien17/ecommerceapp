@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:logger/logger.dart';
 import '../constants.dart';
 import '../models/product_model.dart';
-import '../services/database/product_database_helper.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;

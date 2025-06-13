@@ -5,7 +5,6 @@ import 'package:logger/logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../constants.dart';
-import '../../../services/firestore_file_access/firestore_file_access_service.dart';
 import '../../../size_config.dart';
 
 class Body extends StatelessWidget {
@@ -166,25 +165,23 @@ class Body extends StatelessWidget {
   }
 
   Widget buildDeveloperAvatar() {
-    return FutureBuilder<String>(
-        future: FirestoreFilesAccess().getDeveloperImage(),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            final url = snapshot.data;
-            return CircleAvatar(
-              radius: SizeConfig.screenWidth * 0.3,
-              backgroundColor: kTextColor.withOpacity(0.75),
-              backgroundImage: NetworkImage(url!),
-            );
-          } else if (snapshot.hasError) {
-            final error = snapshot.error.toString();
-            Logger().e(error);
-          }
-          return CircleAvatar(
-            radius: SizeConfig.screenWidth * 0.3,
-            backgroundColor: kTextColor.withOpacity(0.75),
-          );
-        });
+    return FutureBuilder<String>(builder: (context, snapshot) {
+      if (snapshot.hasData) {
+        final url = snapshot.data;
+        return CircleAvatar(
+          radius: SizeConfig.screenWidth * 0.3,
+          backgroundColor: kTextColor.withOpacity(0.75),
+          backgroundImage: NetworkImage(url!),
+        );
+      } else if (snapshot.hasError) {
+        final error = snapshot.error.toString();
+        Logger().e(error);
+      }
+      return CircleAvatar(
+        radius: SizeConfig.screenWidth * 0.3,
+        backgroundColor: kTextColor.withOpacity(0.75),
+      );
+    });
   }
 
   // Future<void> launchUrlString(String url) async {

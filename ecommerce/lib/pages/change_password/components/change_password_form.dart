@@ -10,9 +10,6 @@ import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/custom_suffix_icon.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
-import '../../../exceptions/firebaseauth/credential_actions_exceptions.dart';
-import '../../../exceptions/firebaseauth/messaged_firebase.dart';
-import '../../../services/authentication/authentification_service.dart';
 import '../../../size_config.dart';
 
 class ChangePasswordForm extends StatefulWidget {

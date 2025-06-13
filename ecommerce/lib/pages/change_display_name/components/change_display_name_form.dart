@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:ecommerce/models/user_model.dart';
 import 'package:ecommerce/shared_preference.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 
@@ -10,7 +9,6 @@ import '../../../api/api_end_point.dart';
 import '../../../api/api_util.dart';
 import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/default_button.dart';
-import '../../../services/authentication/authentification_service.dart';
 import '../../../size_config.dart';
 
 class ChangeDisplayNameForm extends StatefulWidget {

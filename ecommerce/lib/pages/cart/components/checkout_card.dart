@@ -57,7 +57,7 @@ class CheckoutCard extends StatelessWidget {
                       return Text.rich(
                         TextSpan(text: "Total\n", children: [
                           TextSpan(
-                            text: "\₹$cartTotal",
+                            text: "\đ $cartTotal",
                             style: TextStyle(
                               fontSize: 18,
                               color: Colors.black,
@@ -71,7 +71,7 @@ class CheckoutCard extends StatelessWidget {
                   },
                 ),
                 SizedBox(
-                  width: getProportionateScreenWidth(190),
+                  width: getProportionateScreenWidth(160),
                   child: DefaultButton(
                     text: "Checkout",
                     press: onCheckoutPressed,

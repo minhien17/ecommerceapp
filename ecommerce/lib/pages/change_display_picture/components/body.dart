@@ -12,7 +12,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../components/default_button.dart';
 import '../../../constants.dart';
 import '../../../exceptions/local_files/local_file_handling.dart';
-import '../../../services/firestore_file_access/firestore_file_access_service.dart';
 import '../../../services/local_files_access/image_picking_exception.dart';
 import '../../../services/local_files_access/local_files_access.dart';
 import '../../../size_config.dart';

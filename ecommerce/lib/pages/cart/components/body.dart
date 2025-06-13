@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:ecommerce/pages/cart/components/checkout_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
@@ -18,6 +17,7 @@ import '../../../models/order_product_model.dart';
 import '../../../models/product_model.dart';
 import '../../../size_config.dart';
 import '../../../utils.dart';
+import '../../payment/payment_screen.dart';
 import '../../product_details/product_details_screen.dart';
 
 class Body extends StatefulWidget {
@@ -398,76 +398,12 @@ class _BodyState extends State<Body> {
 
   Future<void> checkoutButtonCallback() async {
     shutBottomSheet();
-    final confirmation = await showConfirmationDialog(
+    await Navigator.push(
       context,
-      "This is just a Project Testing App so, no actual Payment Interface is available.\nDo you want to proceed for Mock Ordering of Products?",
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(),
+      ),
     );
-    if (confirmation == false) {
-      return;
-    }
-    // final orderFuture = UserDatabaseHelper().emptyCart();
-    // orderFuture.then((orderedProductsUid) async {
-    //   if (orderedProductsUid != null) {
-    //     print(orderedProductsUid);
-    //     final dateTime = DateTime.now();
-    //     final formatedDateTime =
-    //         "${dateTime.day}-${dateTime.month}-${dateTime.year}";
-    //     List<OrderedProduct> orderedProducts = orderedProductsUid
-    //         .map((e) =>
-    //             OrderedProduct('', productUid: e, orderDate: formatedDateTime))
-    //         .toList();
-    //     bool addedProductsToMyProducts = false;
-    //     String snackbarmMessage = '';
-    //     try {
-    //       // addedProductsToMyProducts =
-    //       //     await UserDatabaseHelper().addToMyOrders(orderedProducts);
-    //       if (addedProductsToMyProducts) {
-    //         snackbarmMessage = "Products ordered Successfully";
-    //       } else {
-    //         throw "Could not order products due to unknown issue";
-    //       }
-    //     } on FirebaseException catch (e) {
-    //       Logger().e(e.toString());
-    //       snackbarmMessage = e.toString();
-    //     } catch (e) {
-    //       Logger().e(e.toString());
-    //       snackbarmMessage = e.toString();
-    //     } finally {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         SnackBar(
-    //           content: Text(snackbarmMessage),
-    //         ),
-    //       );
-    //     }
-    //   } else {
-    //     throw "Something went wrong while clearing cart";
-    //   }
-    //   await showDialog(
-    //     context: context,
-    //     builder: (context) {
-    //       return FutureProgressDialog(
-    //         orderFuture,
-    //         message: const Text("Placing the Order"),
-    //       );
-    //     },
-    //   );
-    // }).catchError((e) {
-    //   Logger().e(e.toString());
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(
-    //       content: Text("Something went wrong"),
-    //     ),
-    //   );
-    // });
-    // await showDialog(
-    //   context: context,
-    //   builder: (context) {
-    //     return FutureProgressDialog(
-    //       orderFuture,
-    //       message: const Text("Placing the Order"),
-    //     );
-    //   },
-    // );
   }
 
   void shutBottomSheet() {

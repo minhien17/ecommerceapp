@@ -10,7 +10,6 @@ import 'package:logger/logger.dart';
 import '../../../api/api_end_point.dart';
 import '../../../api/api_util.dart';
 import '../../../common/widgets/flutter_toast.dart';
-import '../../../services/authentication/authentification_service.dart';
 import '../../../utils.dart';
 
 class AddToCartFAB extends StatelessWidget {
