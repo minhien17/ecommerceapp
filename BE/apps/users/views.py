@@ -191,6 +191,8 @@ def remove_from_cart(request, productid):
     except CartItem.DoesNotExist:
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
 
+
+
 @api_view(['POST'])
 def update_user(request):
     auth_header = request.headers.get("Authorization")
