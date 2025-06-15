@@ -414,14 +414,3 @@ def get_all_ordered_products(request):
     orders = OrderedProduct.objects.filter(user_id=user_id).order_by('-order_date')
     serializer = OrderedProductSerializer(orders, many=True)
     return api_response(data=serializer.data, message="Get all ordered products success", code=200, status=200)
-
-#api clear cart
-@api_view(['DELETE'])
-def clear_cart(request):
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
-    user_id = auth_header.split(" ")[1]
-
-    deleted, _ = CartItem.objects.filter(cart_id=user_id).delete()
-    return api_response(data={"deleted": deleted}, message="Clear cart success", code=200, status=200)

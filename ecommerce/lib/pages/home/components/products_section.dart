@@ -46,7 +46,7 @@ class _ProductsSectionState extends State<ProductsSection> {
       ApiUtil.getInstance()!.get(
         url: ApiEndpoint.productYouLike,
         onSuccess: (response) {
-          List<ProductModel> products = (response.data as List)
+          List<ProductModel> products = (response.data['data'] as List)
               .map((json) => ProductModel.fromJson(json))
               .toList();
           completer.complete(products);
