@@ -14,7 +14,7 @@ def api_response(data=None, message="", code=200, status=200, errMessage=""):
         "data": data,
         "status": status,
         "errMessage": errMessage
-    }, status=status)
+    }, status=status, content_type= 'application/json; charset=utf-8')
 
 class UserSerializer(serializers.ModelSerializer):
     favourite_products = serializers.SerializerMethodField()
@@ -190,6 +190,8 @@ def remove_from_cart(request, productid):
         return api_response(data={"cart_id": cart_id, "product_id": productid}, message="Remove from cart success", code=200, status=200)
     except CartItem.DoesNotExist:
         return api_response(data=None, message="Product not found in cart", code=404, status=404)
+
+
 
 @api_view(['POST'])
 def update_user(request):
@@ -400,3 +402,26 @@ def add_ordered_product(request):
         return api_response(data=None, message="Invalid data", code=400, status=400, errMessage=serializer.errors)
     except Exception as e:
         return api_response(data=None, message="Internal server error", code=500, status=500, errMessage=str(e))
+    
+#get all ordered
+@api_view(['GET'])
+def get_all_ordered_products(request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+
+    orders = OrderedProduct.objects.filter(user_id=user_id).order_by('-order_date')
+    serializer = OrderedProductSerializer(orders, many=True)
+    return api_response(data=serializer.data, message="Get all ordered products success", code=200, status=200)
+
+#api clear cart
+@api_view(['DELETE'])
+def clear_cart(request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(data=None, message="Missing or invalid token", code=401, status=401)
+    user_id = auth_header.split(" ")[1]
+
+    deleted, _ = CartItem.objects.filter(cart_id=user_id).delete()
+    return api_response(data={"deleted": deleted}, message="Clear cart success", code=200, status=200)

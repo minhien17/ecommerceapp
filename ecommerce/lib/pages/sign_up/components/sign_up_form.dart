@@ -5,7 +5,6 @@ import 'package:ecommerce/components/default_button.dart';
 import 'package:ecommerce/constants.dart';
 import 'package:ecommerce/pages/sign_in/sign_in.dart';
 import 'package:ecommerce/pages/sign_up/sign_up_page.dart';
-import 'package:ecommerce/services/authentication/authentification_service.dart';
 import 'package:ecommerce/size_config.dart';
 import 'package:flutter/material.dart';
 

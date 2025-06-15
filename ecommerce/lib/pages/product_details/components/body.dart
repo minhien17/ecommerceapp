@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../../../constants.dart';
 import '../../../models/product_model.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../size_config.dart';
 import 'product_review_section.dart';
 

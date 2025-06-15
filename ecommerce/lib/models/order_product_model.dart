@@ -37,3 +37,18 @@ class OrderedProduct extends Model {
     return map;
   }
 }
+
+class OrderedProductModel {
+  String? _productUid;
+  String? _orderDate;
+
+  OrderedProductModel();
+
+  OrderedProductModel.fromJson(Map<String, dynamic> json) {
+    _productUid = json['product_id'];
+    _orderDate = json['order_date'];
+  }
+
+  String get productUid => _productUid ?? "";
+  String get orderDate => _orderDate ?? "";
+}

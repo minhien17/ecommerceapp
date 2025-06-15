@@ -4,7 +4,6 @@ import 'package:logger/logger.dart';
 import '../../../constants.dart';
 import '../../../models/cart_item_model.dart';
 import '../../../models/product_model.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../size_config.dart';
 
 class CartItemCard extends StatelessWidget {
@@ -17,7 +16,6 @@ class CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Product>(
-      future: ProductDatabaseHelper().getProductWithID(cartItem.id),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Row(

@@ -52,6 +52,13 @@ class ReviewModel {
 
   ReviewModel();
 
+  // Constructor tùy chỉnh để khởi tạo với các giá trị cụ thể
+  ReviewModel.custom(
+    this._reviewerUid,
+    this._rating,
+    this._feedback,
+  );
+
   ReviewModel.fromJson(Map<String, dynamic> json) {
     _reviewId = json['review_id'];
     _reviewerUid = json['reviewer_uid'];
@@ -63,4 +70,10 @@ class ReviewModel {
   String get reviewerUid => _reviewerUid ?? "";
   int get rating => _rating ?? 0;
   String get feedback => _feedback ?? "";
+
+  // Setters
+  set reviewId(String? value) => _reviewId = value;
+  set reviewerUid(String? value) => _reviewerUid = value;
+  set rating(int? value) => _rating = value;
+  set feedback(String? value) => _feedback = value;
 }

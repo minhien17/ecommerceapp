@@ -11,9 +11,9 @@ import '../../../models/product_model.dart';
 import '../../../size_config.dart';
 
 class CheckoutCard extends StatelessWidget {
-  final VoidCallback onCheckoutPressed;
+  // final VoidCallback onCheckoutPressed;
+  final void Function(num) onCheckoutPressed;
   final List<CartItemModel> cartItems;
-
   const CheckoutCard({
     Key? key,
     required this.onCheckoutPressed,
@@ -54,28 +54,32 @@ class CheckoutCard extends StatelessWidget {
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
                       final cartTotal = snapshot.data;
-                      return Text.rich(
-                        TextSpan(text: "Total\n", children: [
-                          TextSpan(
-                            text: "\₹$cartTotal",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
+                      return Row(
+                        children: [
+                          Text.rich(
+                            TextSpan(text: "Total\n", children: [
+                              TextSpan(
+                                text: "\đ $cartTotal",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ]),
+                          ),
+                          SizedBox(
+                            width: getProportionateScreenWidth(160),
+                            child: DefaultButton(
+                              text: "Checkout",
+                              press: () => onCheckoutPressed(cartTotal ?? 0),
                             ),
                           ),
-                        ]),
+                        ],
                       );
                     }
                     return Center(child: CircularProgressIndicator());
                   },
-                ),
-                SizedBox(
-                  width: getProportionateScreenWidth(190),
-                  child: DefaultButton(
-                    text: "Checkout",
-                    press: onCheckoutPressed,
-                  ),
                 ),
               ],
             ),

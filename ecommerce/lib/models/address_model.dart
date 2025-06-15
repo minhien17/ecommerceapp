@@ -7,7 +7,6 @@ class AddressModel {
   String? _city;
   String? _district;
   String? _state;
-  String? _landmark;
   String? _pincode;
   String? _phone;
 
@@ -23,7 +22,6 @@ class AddressModel {
     String? city,
     String? district,
     String? state,
-    String? landmark,
     String? pincode,
     String? phone,
   })  : _addressId = addressId,
@@ -34,7 +32,6 @@ class AddressModel {
         _city = city,
         _district = district,
         _state = state,
-        _landmark = landmark,
         _pincode = pincode,
         _phone = phone;
 
@@ -48,7 +45,6 @@ class AddressModel {
     _city = json['city'];
     _district = json['district'];
     _state = json['state'];
-    _landmark = json['landmark'];
     _pincode = json['pincode'];
     _phone = json['phone'];
   }
@@ -64,7 +60,6 @@ class AddressModel {
       'city': _city,
       'district': _district,
       'state': _state,
-      'landmark': _landmark,
       'pincode': _pincode,
       'phone': _phone,
     };
@@ -79,7 +74,6 @@ class AddressModel {
   String get city => _city ?? "";
   String get district => _district ?? "";
   String get state => _state ?? "";
-  String get landmark => _landmark ?? "";
   String get pincode => _pincode ?? "";
   String get phone => _phone ?? "";
 }

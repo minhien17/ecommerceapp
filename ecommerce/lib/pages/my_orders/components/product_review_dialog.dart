@@ -6,7 +6,7 @@ import '../../../models/review_model.dart';
 import '../../../size_config.dart';
 
 class ProductReviewDialog extends StatelessWidget {
-  final Review review;
+  final ReviewModel review;
   ProductReviewDialog({
     Key? key,
     required this.review,

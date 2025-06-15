@@ -7,3 +7,6 @@ Pillow>=10.3.0
 python-dotenv==1.0.0
 drf-yasg>=1.21.7
 django-filter==23.3
+numpy
+pandas
+scikit-learn

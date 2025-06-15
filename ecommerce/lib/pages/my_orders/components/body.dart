@@ -1,17 +1,20 @@
+import 'dart:async';
+
 import 'package:ecommerce/pages/my_orders/components/product_review_dialog.dart';
+import 'package:ecommerce/shared_preference.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+import '../../../api/api_end_point.dart';
+import '../../../api/api_util.dart';
+import '../../../common/widgets/flutter_toast.dart';
 import '../../../components/nothingtoshow.dart';
 import '../../../components/product_short_detail_card.dart';
 import '../../../constants.dart';
 import '../../../models/order_product_model.dart';
 import '../../../models/product_model.dart';
 import '../../../models/review_model.dart';
-import '../../../services/authentication/authentification_service.dart';
-import '../../../services/data_stream/ordered_products_stream.dart';
-import '../../../services/database/product_database_helper.dart';
 import '../../../size_config.dart';
 import '../../product_details/product_details_screen.dart';
 
@@ -69,11 +72,12 @@ class _BodyState extends State<Body> {
   }
 
   Widget buildOrderedProductsList() {
-    return StreamBuilder<List<String>>(
+    return FutureBuilder<List<OrderedProductModel>>(
+      future: getListOrderProduct(),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
-          final orderedProductsIds = snapshot.data;
-          if (orderedProductsIds!.length == 0) {
+          final orderedProducts = snapshot.data;
+          if (orderedProducts!.length == 0) {
             return Center(
               child: NothingToShowContainer(
                 iconPath: "assets/icons/empty_bag.svg",
@@ -83,29 +87,9 @@ class _BodyState extends State<Body> {
           }
           return ListView.builder(
             physics: BouncingScrollPhysics(),
-            itemCount: orderedProductsIds.length,
+            itemCount: orderedProducts.length,
             itemBuilder: (context, index) {
-              return FutureBuilder<OrderedProduct>(
-                // future: UserDatabaseHelper()
-                //     .getOrderedProductFromId(orderedProductsIds[index]),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final orderedProduct = snapshot.data;
-                    return buildOrderedProductItem(orderedProduct!);
-                  } else if (snapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    final error = snapshot.error.toString();
-                    Logger().e(error);
-                  }
-                  return Icon(
-                    Icons.error,
-                    size: 60,
-                    color: kTextColor,
-                  );
-                },
-              );
+              return buildOrderedProductItem(orderedProducts[index]);
             },
           );
         } else if (snapshot.connectionState == ConnectionState.waiting) {
@@ -127,10 +111,9 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Widget buildOrderedProductItem(OrderedProduct orderedProduct) {
+  Widget buildOrderedProductItem(OrderedProductModel orderedProduct) {
     return FutureBuilder<ProductModel>(
-      // future: ProductDatabaseHelper()
-      //     .getProductWithID(orderedProduct.productUid ?? ''),
+      future: getProductWithID(orderedProduct.productUid),
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           final product = snapshot.data;
@@ -184,16 +167,16 @@ class _BodyState extends State<Body> {
                   child: ProductShortDetailCard(
                     product: product as ProductModel,
                     onPressed: () {
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (context) => ProductDetailsScreen(
-                      //       productId: product.id,
-                      //     ),
-                      //   ),
-                      // ).then((_) async {
-                      //   await refreshPage();
-                      // });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailsScreen(
+                            product: product,
+                          ),
+                        ),
+                      ).then((_) async {
+                        await refreshPage();
+                      });
                     },
                   ),
                 ),
@@ -213,21 +196,15 @@ class _BodyState extends State<Body> {
                   child: ElevatedButton(
                     onPressed: () async {
                       String currentUserUid =
-                          AuthentificationService().currentUser.uid;
-                      Review prevReview = Review('');
+                          await SharedPreferenceUtil.getToken();
+                      ReviewModel prevReview = ReviewModel();
                       try {
-                        prevReview = await ProductDatabaseHelper()
-                            .getProductReviewWithID(product.id, currentUserUid);
-                      } on FirebaseException catch (e) {
-                        Logger().w("Firebase Exception: $e");
-                      } catch (e) {
-                        Logger().w("Unknown Exception: $e");
+                        prevReview =
+                            await getReviewWithID(orderedProduct.productUid);
                       } finally {
                         if (prevReview.id == '') {
-                          prevReview = Review(
-                            currentUserUid,
-                            reviewerUid: currentUserUid,
-                          );
+                          prevReview =
+                              ReviewModel.custom(currentUserUid, 0, '');
                         }
                       }
 
@@ -239,34 +216,11 @@ class _BodyState extends State<Body> {
                           );
                         },
                       );
-                      if (result is Review) {
-                        bool reviewAdded = false;
-                        String snackbarMessage = '';
-                        try {
-                          result.reviewerUid =
-                              AuthentificationService().currentUser.uid;
-                          reviewAdded = await ProductDatabaseHelper()
-                              .addProductReview(product.id, result);
-                          if (reviewAdded == true) {
-                            snackbarMessage =
-                                "Product review added successfully";
-                          } else {
-                            throw "Coulnd't add product review due to unknown reason";
-                          }
-                        } on FirebaseException catch (e) {
-                          Logger().w("Firebase Exception: $e");
-                          snackbarMessage = e.toString();
-                        } catch (e) {
-                          Logger().w("Unknown Exception: $e");
-                          snackbarMessage = e.toString();
-                        } finally {
-                          Logger().i(snackbarMessage);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(snackbarMessage),
-                            ),
-                          );
-                        }
+                      if (result is ReviewModel) {
+                        await updateReview(
+                            result,
+                            orderedProduct
+                                .productUid); // Gọi API cập nhật review
                       }
                       await refreshPage();
                     },
@@ -296,5 +250,100 @@ class _BodyState extends State<Body> {
         );
       },
     );
+  }
+
+  Future<List<OrderedProductModel>> getListOrderProduct() async {
+    final completer = Completer<List<OrderedProductModel>>();
+
+    ApiUtil.getInstance()!.get(
+      url: ApiEndpoint.orders, // Endpoint để lấy danh sách đơn hàng
+      onSuccess: (response) {
+        List<OrderedProductModel> orderProducts =
+            (response.data['data'] as List)
+                .map((json) => OrderedProductModel.fromJson(json))
+                .toList();
+        completer.complete(orderProducts);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.completeError(error); // Xử lý lỗi
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<ProductModel> getProductWithID(String productId) async {
+    final completer = Completer<ProductModel>();
+
+    ApiUtil.getInstance()!.get(
+      url: "${ApiEndpoint.product}/$productId",
+      onSuccess: (response) {
+        ProductModel product = ProductModel.fromJson(response.data['data']);
+        completer.complete(product);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.completeError(error); // note: cẩn thận với lỗi
+      },
+    );
+    return completer.future;
+  }
+
+  Future<ReviewModel> getReviewWithID(String reviewId) async {
+    final completer = Completer<ReviewModel>();
+
+    ApiUtil.getInstance()!.get(
+      url:
+          "${ApiEndpoint.review}/$reviewId/detail", // Endpoint để lấy review theo ID
+      onSuccess: (response) {
+        ReviewModel review = ReviewModel.fromJson(response.data['review']);
+        completer.complete(review);
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Time out");
+        } else {
+          // toastInfo(msg: error.toString());
+        }
+        completer.complete(ReviewModel()); // Xử lý lỗi
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<bool> updateReview(ReviewModel reviewModel, String productId) async {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.post(
+      url: "${ApiEndpoint.review}/${productId}", // Endpoint để cập nhật review
+      body: {
+        "rating": reviewModel.rating,
+        "review": reviewModel.feedback,
+      }, // Dữ liệu cập nhật
+      onSuccess: (response) {
+        toastInfo(msg: "Review updated successfully");
+        completer.complete(true); // Thành công
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Request timed out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(false); // Thất bại
+      },
+    );
+
+    return completer.future;
   }
 }

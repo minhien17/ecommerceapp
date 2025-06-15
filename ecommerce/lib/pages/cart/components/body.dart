@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:ecommerce/pages/cart/components/checkout_card.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:future_progress_dialog/future_progress_dialog.dart';
 import 'package:logger/logger.dart';
 
@@ -18,7 +19,9 @@ import '../../../models/order_product_model.dart';
 import '../../../models/product_model.dart';
 import '../../../size_config.dart';
 import '../../../utils.dart';
+import '../../payment/payment_screen.dart';
 import '../../product_details/product_details_screen.dart';
+import 'package:http/http.dart' as http;
 
 class Body extends StatefulWidget {
   @override
@@ -28,10 +31,20 @@ class Body extends StatefulWidget {
 class _BodyState extends State<Body> {
   PersistentBottomSheetController? bottomSheetHandler;
   late Future<List<CartItemModel>> _listCart;
+  List<ProductModel> _listproducts = [];
+  Map<String, dynamic>? paymentIntent;
   @override
   void initState() {
     super.initState();
     _listCart = getListCart();
+    getListProduct().then((value) {
+      _listproducts = value;
+      setState(() {});
+    });
+  }
+
+  void loadProducts() async {
+    _listproducts = await getListProduct();
   }
 
   @override
@@ -116,11 +129,54 @@ class _BodyState extends State<Body> {
                   physics: const BouncingScrollPhysics(),
                   itemCount: cartItems.length,
                   itemBuilder: (context, index) {
+                    CartItemModel cartItem = cartItems[index];
                     if (index >= cartItems.length) {
                       return SizedBox(height: getProportionateScreenHeight(80));
                     }
-                    return buildCartItemDismissible(
-                        context, cartItems[index], index);
+                    return Dismissible(
+                      key: Key(cartItem.id),
+                      direction: DismissDirection.startToEnd,
+                      dismissThresholds: {
+                        DismissDirection.startToEnd: 0.65,
+                      },
+                      background: buildDismissibleBackground(),
+                      child: buildCartItem(cartItem, cartItem.id),
+                      confirmDismiss: (direction) async {
+                        if (direction == DismissDirection.startToEnd) {
+                          final confirmation = await showConfirmationDialog(
+                            context,
+                            "Remove Product from Cart?",
+                          );
+                          if (confirmation) {
+                            if (direction == DismissDirection.startToEnd) {
+                              bool result = false;
+                              String snackbarMessage = '';
+                              try {
+                                result = await deleteProduct(cartItem.id);
+                                if (result == true) {
+                                  snackbarMessage =
+                                      "Product removed from cart successfully";
+                                  await refreshPage();
+                                } else {
+                                  throw "Coulnd't remove product from cart due to unknown reason";
+                                }
+                              } finally {
+                                Logger().i(snackbarMessage);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(snackbarMessage),
+                                  ),
+                                );
+                              }
+
+                              return result;
+                            }
+                          }
+                        }
+                        return false;
+                      },
+                      onDismissed: (direction) {},
+                    );
                   },
                 ),
               ),
@@ -148,13 +204,16 @@ class _BodyState extends State<Body> {
   Future<List<CartItemModel>> getListCart() async {
     final completer = Completer<List<CartItemModel>>();
 
+    await Future.delayed(Duration(milliseconds: 500)); // Delay song song
+
     ApiUtil.getInstance()!.get(
       url: ApiEndpoint.userCart,
       onSuccess: (response) {
-        List<CartItemModel> listCarts = (response.data as List)
+        List<CartItemModel> list = (response.data as List)
             .map((json) => CartItemModel.fromJson(json))
             .toList();
-        completer.complete(listCarts);
+        completer.complete(list);
+        setState(() {});
       },
       onError: (error) {
         if (error is TimeoutException) {
@@ -168,33 +227,12 @@ class _BodyState extends State<Body> {
     return completer.future;
   }
 
-  Future<ProductModel> getProductWithID(String productId) async {
-    final completer = Completer<ProductModel>();
-
-    ApiUtil.getInstance()!.get(
-      url: "${ApiEndpoint.product}/$productId",
-      onSuccess: (response) {
-        ProductModel product = ProductModel.fromJson(response.data['data']);
-        completer.complete(product);
-      },
-      onError: (error) {
-        if (error is TimeoutException) {
-          toastInfo(msg: "Time out");
-        } else {
-          toastInfo(msg: error.toString());
-        }
-        completer.completeError(error); // note: cẩn thận với lỗi
-      },
-    );
-    return completer.future;
-  }
-
   Future<bool> deleteProduct(String id) {
     final completer = Completer<bool>();
 
     ApiUtil.getInstance()!.delete(
       // delete
-      url: "${ApiEndpoint.userCart}/$id",
+      url: "${ApiEndpoint.userCart}/$id/remove",
       onSuccess: (response) {
         completer.complete(true);
       },
@@ -210,54 +248,8 @@ class _BodyState extends State<Body> {
     return completer.future;
   }
 
-  Widget buildCartItemDismissible(
-      BuildContext context, CartItemModel cartItem, int index) {
-    return Dismissible(
-      key: Key(cartItem.id),
-      direction: DismissDirection.startToEnd,
-      dismissThresholds: {
-        DismissDirection.startToEnd: 0.65,
-      },
-      background: buildDismissibleBackground(),
-      child: buildCartItem(cartItem, index),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          final confirmation = await showConfirmationDialog(
-            context,
-            "Remove Product from Cart?",
-          );
-          if (confirmation) {
-            if (direction == DismissDirection.startToEnd) {
-              bool result = false;
-              String snackbarMessage = '';
-              try {
-                result = await deleteProduct(cartItem.id);
-                if (result == true) {
-                  snackbarMessage = "Product removed from cart successfully";
-                  await refreshPage();
-                } else {
-                  throw "Coulnd't remove product from cart due to unknown reason";
-                }
-              } finally {
-                Logger().i(snackbarMessage);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(snackbarMessage),
-                  ),
-                );
-              }
-
-              return result;
-            }
-          }
-        }
-        return false;
-      },
-      onDismissed: (direction) {},
-    );
-  }
-
-  Widget buildCartItem(CartItemModel cartItem, int index) {
+  Widget buildCartItem(CartItemModel cartItem, String index) {
+    final product = _listproducts.firstWhere((p) => p.id == cartItem.id);
     return Container(
       padding: const EdgeInsets.only(
         bottom: 4,
@@ -269,100 +261,74 @@ class _BodyState extends State<Body> {
         border: Border.all(color: kTextColor.withOpacity(0.15)),
         borderRadius: BorderRadius.circular(15),
       ),
-      child: FutureBuilder<ProductModel>(
-        future: getProductWithID(cartItem.id),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            ProductModel product = snapshot.data as ProductModel;
-            return Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  flex: 8,
-                  child: ProductShortDetailCard(
-                    product: product,
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailsScreen(
-                            product: product,
-                          ),
-                        ),
-                      );
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            flex: 8,
+            child: ProductShortDetailCard(
+              product: product,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailsScreen(
+                      product: product,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 2,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: kTextColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(
+                    child: const Icon(
+                      Icons.arrow_drop_up,
+                      color: kTextColor,
+                    ),
+                    onTap: () async {
+                      await arrowUpCallback(cartItem.id);
                     },
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 2,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kTextColor.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        InkWell(
-                          child: const Icon(
-                            Icons.arrow_drop_up,
-                            color: kTextColor,
-                          ),
-                          onTap: () async {
-                            await arrowUpCallback(cartItem.id);
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "${cartItem.itemCount}",
-                          style: const TextStyle(
-                            color: kPrimaryColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        InkWell(
-                          child: const Icon(
-                            Icons.arrow_drop_down,
-                            color: kTextColor,
-                          ),
-                          onTap: () async {
-                            await arrowDownCallback(cartItem.id);
-                          },
-                        ),
-                      ],
+                  const SizedBox(height: 8),
+                  Text(
+                    "${cartItem.itemCount}",
+                    style: const TextStyle(
+                      color: kPrimaryColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
                     ),
                   ),
-                ),
-              ],
-            );
-          } else if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else if (snapshot.hasError) {
-            final error = snapshot.error;
-            Logger().w(error.toString());
-            return Center(
-              child: Text(
-                error.toString(),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    child: const Icon(
+                      Icons.arrow_drop_down,
+                      color: kTextColor,
+                    ),
+                    onTap: () async {
+                      await arrowDownCallback(cartItem.id);
+                    },
+                  ),
+                ],
               ),
-            );
-          } else {
-            return const Center(
-              child: Icon(
-                Icons.error,
-              ),
-            );
-          }
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -396,77 +362,15 @@ class _BodyState extends State<Body> {
     );
   }
 
-  Future<void> checkoutButtonCallback() async {
+  Future<void> checkoutButtonCallback(num cartTotal) async {
+    print(cartTotal);
     shutBottomSheet();
-    final confirmation = await showConfirmationDialog(
-      context,
-      "This is just a Project Testing App so, no actual Payment Interface is available.\nDo you want to proceed for Mock Ordering of Products?",
-    );
-    if (confirmation == false) {
-      return;
-    }
-    // final orderFuture = UserDatabaseHelper().emptyCart();
-    // orderFuture.then((orderedProductsUid) async {
-    //   if (orderedProductsUid != null) {
-    //     print(orderedProductsUid);
-    //     final dateTime = DateTime.now();
-    //     final formatedDateTime =
-    //         "${dateTime.day}-${dateTime.month}-${dateTime.year}";
-    //     List<OrderedProduct> orderedProducts = orderedProductsUid
-    //         .map((e) =>
-    //             OrderedProduct('', productUid: e, orderDate: formatedDateTime))
-    //         .toList();
-    //     bool addedProductsToMyProducts = false;
-    //     String snackbarmMessage = '';
-    //     try {
-    //       // addedProductsToMyProducts =
-    //       //     await UserDatabaseHelper().addToMyOrders(orderedProducts);
-    //       if (addedProductsToMyProducts) {
-    //         snackbarmMessage = "Products ordered Successfully";
-    //       } else {
-    //         throw "Could not order products due to unknown issue";
-    //       }
-    //     } on FirebaseException catch (e) {
-    //       Logger().e(e.toString());
-    //       snackbarmMessage = e.toString();
-    //     } catch (e) {
-    //       Logger().e(e.toString());
-    //       snackbarmMessage = e.toString();
-    //     } finally {
-    //       ScaffoldMessenger.of(context).showSnackBar(
-    //         SnackBar(
-    //           content: Text(snackbarmMessage),
-    //         ),
-    //       );
-    //     }
-    //   } else {
-    //     throw "Something went wrong while clearing cart";
-    //   }
-    //   await showDialog(
-    //     context: context,
-    //     builder: (context) {
-    //       return FutureProgressDialog(
-    //         orderFuture,
-    //         message: const Text("Placing the Order"),
-    //       );
-    //     },
-    //   );
-    // }).catchError((e) {
-    //   Logger().e(e.toString());
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(
-    //       content: Text("Something went wrong"),
-    //     ),
-    //   );
-    // });
-    // await showDialog(
-    //   context: context,
-    //   builder: (context) {
-    //     return FutureProgressDialog(
-    //       orderFuture,
-    //       message: const Text("Placing the Order"),
-    //     );
-    //   },
+    await makePayment(cartTotal);
+    // await Navigator.push(
+    //   context,
+    //   MaterialPageRoute(
+    //     builder: (context) => PaymentScreen(),
+    //   ),
     // );
   }
 
@@ -528,4 +432,169 @@ class _BodyState extends State<Body> {
       },
     );
   }
+
+  Future<void> makePayment(num cartTotal) async {
+    int amountInCents = (cartTotal * 100).toInt(); // Chuyển sang cent
+    try {
+      paymentIntent = await createPaymentIntent(
+        amount: amountInCents.toString(), // tức là $3.00 nếu dùng đơn vị cent
+        currency: "usd",
+      );
+
+      if (paymentIntent == null) {
+        return;
+      }
+
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentIntent!['client_secret'],
+          merchantDisplayName: 'Demo Store',
+          style: ThemeMode.light,
+        ),
+      );
+
+      await Stripe.instance.presentPaymentSheet();
+
+      showDialog(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text("✅ Thanh toán thành công"),
+          content: Icon(Icons.check_circle, color: Colors.green, size: 60),
+        ),
+      );
+      updateOrderedProduct();
+
+      clearCart();
+
+      refreshPage();
+      // call api
+    } on StripeException catch (e) {
+      showDialog(
+        context: context,
+        builder: (_) => const AlertDialog(
+          title: Text("❌ Đã hủy"),
+          content: Icon(Icons.cancel, color: Colors.red, size: 60),
+        ),
+      );
+    } catch (e) {
+      print('Lỗi không xác định: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> createPaymentIntent({
+    required String amount, // số tiền (theo cent nếu là USD)
+    required String currency, // ví dụ: 'vnd'
+  }) async {
+    try {
+      final url = Uri.parse('https://api.stripe.com/v1/payment_intents');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization':
+              'Bearer $stripeSecretKey', // Thay bằng secret key thật
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'amount': amount,
+          'currency': currency,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        print("Failed to create PaymentIntent: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      print("Exception in createPaymentIntent: $e");
+      return null;
+    }
+  }
+
+  Future<bool> clearCart() async {
+    final completer = Completer<bool>();
+
+    ApiUtil.getInstance()!.delete(
+      url: ApiEndpoint.userCart + "/clear", // Endpoint để xóa toàn bộ giỏ hàng
+      onSuccess: (response) {
+        toastInfo(msg: "Cart cleared successfully");
+        completer.complete(true); // Thành công
+      },
+      onError: (error) {
+        if (error is TimeoutException) {
+          toastInfo(msg: "Request timed out");
+        } else {
+          toastInfo(msg: error.toString());
+        }
+        completer.complete(false); // Thất bại
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<bool> updateOrderedProduct() async {
+    try {
+      // Lấy danh sách giỏ hàng từ `_listCart`
+      final listCart = await _listCart;
+
+      bool isSuccess = true;
+
+      for (final cartItem in listCart) {
+        ApiUtil.getInstance()!.post(
+          url: "${ApiEndpoint.orderAdd}", // Endpoint để thêm sản phẩm đã đặt
+          body: {
+            "order_date":
+                DateTime.now().toIso8601String().split('T')[0], // Ngày đặt hàng
+            "product_id": cartItem.id, // Lấy product_id từ giỏ hàng
+          },
+          onSuccess: (response) {
+            toastInfo(msg: "Ordered product added successfull");
+          },
+          onError: (error) {
+            isSuccess = false; // Đánh dấu thất bại nếu có lỗi
+            if (error is TimeoutException) {
+              toastInfo(
+                  msg: "Request timed out for product ID: ${cartItem.id}");
+            } else {
+              toastInfo(
+                  msg:
+                      "Error for product ID ${cartItem.id}: ${error.toString()}");
+            }
+          },
+        );
+      }
+
+      return isSuccess;
+    } catch (e) {
+      toastInfo(msg: "Unexpected error: ${e.toString()}");
+      return false;
+    }
+  }
+}
+
+Future<List<ProductModel>> getListProduct() async {
+  final completer = Completer<List<ProductModel>>();
+
+  ApiUtil.getInstance()!.get(
+    url: ApiEndpoint.product,
+    onSuccess: (response) {
+      List<ProductModel> products = (response.data['data'] as List)
+          .map((json) => ProductModel.fromJson(json))
+          .toList();
+      completer.complete(products);
+    },
+    onError: (error) {
+      if (error is TimeoutException) {
+        toastInfo(msg: "Time out");
+      } else {
+        toastInfo(msg: error.toString());
+        print(error);
+      }
+      completer.complete([]);
+    },
+  );
+  return completer.future;
 }

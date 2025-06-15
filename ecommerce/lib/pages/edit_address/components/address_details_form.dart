@@ -1,6 +1,4 @@
 import 'dart:async';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../../../api/api_end_point.dart';
@@ -82,8 +80,8 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
           SizedBox(height: getProportionateScreenHeight(30)),
           buildStateField(),
           SizedBox(height: getProportionateScreenHeight(30)),
-          buildLandmarkField(),
-          SizedBox(height: getProportionateScreenHeight(30)),
+          // buildLandmarkField(),
+          // SizedBox(height: getProportionateScreenHeight(30)),
           buildPincodeField(),
           SizedBox(height: getProportionateScreenHeight(30)),
           buildPhoneField(),
@@ -105,7 +103,6 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
       cityFieldController.text = widget.address.city;
       districtFieldController.text = widget.address.district;
       stateFieldController.text = widget.address.state;
-      landmarkFieldController.text = widget.address.landmark;
       pincodeFieldController.text = widget.address.pincode;
       phoneFieldController.text = widget.address.phone;
     }
@@ -356,7 +353,7 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
         Logger().i(snackbarMessage);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("snackbarMessage"),
+            content: Text(snackbarMessage),
           ),
         );
       }
@@ -410,7 +407,6 @@ class _AddressDetailsFormState extends State<AddressDetailsForm> {
       city: cityFieldController.text,
       district: districtFieldController.text,
       state: stateFieldController.text,
-      landmark: landmarkFieldController.text,
       pincode: pincodeFieldController.text,
       phone: phoneFieldController.text,
     );

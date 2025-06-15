@@ -1,12 +1,16 @@
 import 'package:ecommerce/theme.dart';
 import 'package:ecommerce/wrappers/authentification_wrapper.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  Stripe.publishableKey = stripePublishableKey;
+
   await Supabase.initialize(
       anonKey:
           "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ma2x5YmNmcGRjYmphZHlvdHduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MDkzNTMsImV4cCI6MjA2MjI4NTM1M30.Ey7RRpqLR22DKCgzB0Ip1JOD2oCWbFnBupWubKxqw0M",

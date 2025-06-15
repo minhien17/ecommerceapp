@@ -5,10 +5,6 @@ import 'package:ecommerce/models/product_model.dart';
 import 'package:ecommerce/pages/home/components/home_header.dart';
 import 'package:ecommerce/pages/home/components/product_type_box.dart';
 import 'package:ecommerce/pages/home/components/products_section.dart';
-import 'package:ecommerce/services/authentication/authentification_service.dart';
-import 'package:ecommerce/services/data_stream/all_product_stream.dart';
-import 'package:ecommerce/services/data_stream/favourite_product_stream.dart';
-import 'package:ecommerce/services/database/product_database_helper.dart';
 import 'package:ecommerce/size_config.dart';
 import 'package:ecommerce/utils.dart';
 import 'package:enum_to_string/enum_to_string.dart';
@@ -170,6 +166,16 @@ class _BodyState extends State<Body> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+                SizedBox(height: getProportionateScreenHeight(20)),
+                SizedBox(
+                  height: SizeConfig.screenHeight * 0.5,
+                  child: ProductsSection(
+                    key: ValueKey(_refreshKey), // key thay đổi thì sẽ rebuild
+                    sectionTitle: "Discovery",
+                    emptyListMessage: "Add Product to Favourites",
+                    onProductCardTapped: onProductCardTapped,
                   ),
                 ),
                 SizedBox(height: getProportionateScreenHeight(20)),

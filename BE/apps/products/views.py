@@ -188,14 +188,53 @@ def review(request, productid):
     elif request.method == 'POST':
         rating = request.data.get("rating")
         review_text = request.data.get("review")
-        reviewer_id = request.headers.get('token') or request.data.get('reviewer_id')
+        auth_header = request.headers.get("Authorization")
+        reviewer_id = None
+        if auth_header and auth_header.startswith("Bearer "):
+            reviewer_id = auth_header.split(" ")[1]
         if not (rating and review_text and reviewer_id):
             return api_response(data=None, message="Missing data", code=400, status=400)
-        Review.objects.create(
-            review_id=f"{productid}_{reviewer_id}",
+        # Kiểm tra nếu đã có review thì update, chưa có thì tạo mới
+        review_obj, created = Review.objects.get_or_create(
             product_id=productid,
-            rating=rating,
-            review=review_text,
-            reviewer_id=reviewer_id
+            reviewer_id=reviewer_id,
+            defaults={
+                "review_id": f"{productid}_{reviewer_id}",
+                "rating": rating,
+                "review": review_text,
+            }
         )
-        return api_response(data={"success": True}, message="Add review success")
+        if not created:
+            review_obj.rating = rating
+            review_obj.review = review_text
+            review_obj.save()
+            return api_response(data={"success": True, "updated": True}, message="Update review success")
+        return api_response(data={"success": True, "created": True}, message="Add review success")
+    
+    #get review detail 
+@api_view(['GET'])
+def review_detail(request, productid):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"error": "Missing or invalid token"}, status=401)
+    user_id = auth_header.split(" ")[1]
+
+    try:
+        review = Review.objects.filter(product__product_id=productid, reviewer_id=user_id).first()
+        if not review:
+            return Response({"review": None}, status=200)
+        try:
+            user = User.objects.get(user_id=review.reviewer_id)
+            reviewer_name = user.username
+        except User.DoesNotExist:
+            reviewer_name = None
+        data = {
+            "review_id": review.review_id,
+            "rating": review.rating if review.rating is not None else None,
+            "review": review.review or None,
+            "review_uid": review.reviewer_id or None,
+            "review_name": reviewer_name
+        }
+        return Response({"review": data}, status=200)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

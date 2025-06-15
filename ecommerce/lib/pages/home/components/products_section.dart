@@ -31,6 +31,7 @@ class ProductsSection extends StatefulWidget {
 
 class _ProductsSectionState extends State<ProductsSection> {
   late Future<List<ProductModel>> _productsFuture;
+  List<ProductModel> _products = [];
 
   @override
   void initState() {
@@ -46,6 +47,24 @@ class _ProductsSectionState extends State<ProductsSection> {
         url: ApiEndpoint.productYouLike,
         onSuccess: (response) {
           List<ProductModel> products = (response.data as List)
+              .map((json) => ProductModel.fromJson(json))
+              .toList();
+          completer.complete(products);
+        },
+        onError: (error) {
+          if (error is TimeoutException) {
+            toastInfo(msg: "Time out");
+          } else {
+            toastInfo(msg: error.toString());
+          }
+          completer.complete([]);
+        },
+      );
+    } else if (widget.sectionTitle == "Discovery") {
+      ApiUtil.getInstance()!.get(
+        url: ApiEndpoint.discovery,
+        onSuccess: (response) {
+          List<ProductModel> products = (response.data['data'] as List)
               .map((json) => ProductModel.fromJson(json))
               .toList();
           completer.complete(products);

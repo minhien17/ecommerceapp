@@ -1,15 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ecommerce/components/default_button.dart';
 import 'package:ecommerce/components/product_card.dart';
 import 'package:ecommerce/constants.dart';
 import 'package:ecommerce/exceptions/local_files/local_file_handling.dart';
 import 'package:ecommerce/models/product_model.dart';
 import 'package:ecommerce/pages/edit_product/provider_models/product_detail_model.dart';
-import 'package:ecommerce/services/database/product_database_helper.dart';
-import 'package:ecommerce/services/firestore_file_access/firestore_file_access_service.dart';
 import 'package:ecommerce/services/local_files_access/image_picking_exception.dart';
 import 'package:ecommerce/services/local_files_access/local_files_access.dart';
 import 'package:ecommerce/size_config.dart';
@@ -598,12 +594,6 @@ class _EditProductFormState extends State<EditProductForm> {
       } else {
         throw "Couldn't update product info due to some unknown issue";
       }
-    } on FirebaseException catch (e) {
-      Logger().w("Firebase Exception: $e");
-      snackbarMessage = "Something went wrong";
-    } catch (e) {
-      Logger().w("Unknown Exception: $e");
-      snackbarMessage = e.toString();
     } finally {
       Logger().i(snackbarMessage);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -624,12 +614,6 @@ class _EditProductFormState extends State<EditProductForm> {
       } else {
         throw "Some images couldn't be uploaded, please try again";
       }
-    } on FirebaseException catch (e) {
-      Logger().w("Firebase Exception: $e");
-      snackbarMessage = "Something went wrong";
-    } catch (e) {
-      Logger().w("Unknown Exception: $e");
-      snackbarMessage = "Something went wrong";
     } finally {
       Logger().i(snackbarMessage);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -691,10 +675,6 @@ class _EditProductFormState extends State<EditProductForm> {
               );
             },
           );
-        } on FirebaseException catch (e) {
-          Logger().w("Firebase Exception: $e");
-        } catch (e) {
-          Logger().w("Firebase Exception: $e");
         } finally {
           if (downloadUrl != '') {
             productDetails.selectedImages[i] =
